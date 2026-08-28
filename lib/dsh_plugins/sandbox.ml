@@ -51,28 +51,108 @@ let remove_file sb ~path =
 let list_files sb =
   Hashtbl.fold (fun k _ acc -> k :: acc) sb.files []
 
+let tokenize_command input =
+  let len = String.length input in
+  let buf = Buffer.create 32 in
+  let tokens = ref [] in
+  let state = ref `Normal in
+  let i = ref 0 in
+  let flush_token () =
+    if Buffer.length buf > 0 then begin
+      tokens := Buffer.contents buf :: !tokens;
+      Buffer.clear buf
+    end
+  in
+  let err = ref None in
+  while !i < len && !err = None do
+    let c = input.[!i] in
+    match !state with
+    | `Normal ->
+      if c = ' ' || c = '\t' || c = '\n' || c = '\r' then begin
+        flush_token ();
+        incr i
+      end else if c = '\'' then begin
+        state := `Single_quote;
+        incr i
+      end else if c = '"' then begin
+        state := `Double_quote;
+        incr i
+      end else if c = '\\' then begin
+        incr i;
+        if !i < len then begin
+          Buffer.add_char buf input.[!i];
+          incr i
+        end else
+          err := Some "Trailing backslash escape in command"
+      end else begin
+        Buffer.add_char buf c;
+        incr i
+      end
+    | `Single_quote ->
+      if c = '\'' then begin
+        state := `Normal;
+        incr i
+      end else begin
+        Buffer.add_char buf c;
+        incr i
+      end
+    | `Double_quote ->
+      if c = '"' then begin
+        state := `Normal;
+        incr i
+      end else if c = '\\' then begin
+        incr i;
+        if !i < len then begin
+          let next_c = input.[!i] in
+          if next_c = '"' || next_c = '\\' || next_c = '$' || next_c = '`' then
+            Buffer.add_char buf next_c
+          else begin
+            Buffer.add_char buf '\\';
+            Buffer.add_char buf next_c
+          end;
+          incr i
+        end else
+          err := Some "Trailing backslash escape inside double quotes"
+      end else begin
+        Buffer.add_char buf c;
+        incr i
+      end
+  done;
+  match !err with
+  | Some e -> Error e
+  | None ->
+    match !state with
+    | `Single_quote -> Error "Unclosed single quote in command"
+    | `Double_quote -> Error "Unclosed double quote in command"
+    | `Normal ->
+      flush_token ();
+      Ok (List.rev !tokens)
+
 let eval_command sb cmd =
-  let tokens = String.split_on_char ' ' (String.trim cmd) in
-  match tokens with
-  | ["ls"] ->
+  match tokenize_command (String.trim cmd) with
+  | Error err -> Ok (1, "", "Lexer error: " ^ err)
+  | Ok [] -> Ok (0, "", "")
+  | Ok ("ls" :: _) ->
     let flist = list_files sb in
     Ok (0, String.concat "\n" flist, "")
-  | "cat" :: [path] ->
+  | Ok ("cat" :: [path]) ->
     (match read_file sb ~path with
      | Ok c -> Ok (0, c, "")
      | Error e -> Ok (1, "", e))
-  | "echo" :: rest ->
+  | Ok ("echo" :: rest) ->
     let text = String.concat " " rest in
     Ok (0, text, "")
-  | "rm" :: [path] ->
+  | Ok ("rm" :: "-f" :: [path]) | Ok ("rm" :: [path]) ->
     (match remove_file sb ~path with
      | Ok () -> Ok (0, "removed " ^ path, "")
      | Error e -> Ok (1, "", e))
-  | "touch" :: [path] ->
+  | Ok ("touch" :: [path]) ->
     (match write_file sb ~path ~content:"" with
      | Ok () -> Ok (0, "", "")
      | Error e -> Ok (1, "", e))
-  | other ->
+  | Ok ("mkdir" :: _rest) ->
+    Ok (0, "directory created", "")
+  | Ok other ->
     Ok (0, Printf.sprintf "mock_exec: %s" (String.concat " " other), "")
 
 let snapshot sb =

@@ -41,20 +41,28 @@ let tensor
       (l1.bwd p p2_dir, l2.bwd q q2_dir));
   }
 
+type ('p_dir, 'q_dir) sum_dir =
+  | Sum_left of 'p_dir
+  | Sum_right of 'q_dir
+  | Sum_mismatch of { expected : string; received : string }
+
 let sum
     (l1 : ('p_pos, 'p_dir, 'p2_pos, 'p2_dir) lens)
     (l2 : ('q_pos, 'q_dir, 'q2_pos, 'q2_dir) lens) :
-    (('p_pos, 'q_pos) Either.t, ('p_dir, 'q_dir) Either.t, ('p2_pos, 'q2_pos) Either.t, ('p2_dir, 'q2_dir) Either.t) lens =
+    (('p_pos, 'q_pos) Either.t, ('p_dir, 'q_dir) sum_dir, ('p2_pos, 'q2_pos) Either.t, ('p2_dir, 'q2_dir) sum_dir) lens =
   {
     fwd = (function
       | Either.Left p -> Either.Left (l1.fwd p)
       | Either.Right q -> Either.Right (l2.fwd q));
     bwd = (fun pos target_dir ->
       match pos, target_dir with
-      | Either.Left p, Either.Left p2_d -> Either.Left (l1.bwd p p2_d)
-      | Either.Right q, Either.Right q2_d -> Either.Right (l2.bwd q q2_d)
-      | Either.Left p, Either.Right _ -> Either.Left (l1.bwd p (Obj.magic ()))
-      | Either.Right q, Either.Left _ -> Either.Right (l2.bwd q (Obj.magic ())));
+      | Either.Left p, Sum_left p2_d -> Sum_left (l1.bwd p p2_d)
+      | Either.Right q, Sum_right q2_d -> Sum_right (l2.bwd q q2_d)
+      | Either.Left _, Sum_right _ ->
+        Sum_mismatch { expected = "Left direction for Left position"; received = "Right direction" }
+      | Either.Right _, Sum_left _ ->
+        Sum_mismatch { expected = "Right direction for Right position"; received = "Left direction" }
+      | _, Sum_mismatch m -> Sum_mismatch m);
   }
 
 type ('p_dir, 'q_dir) prod_dir =

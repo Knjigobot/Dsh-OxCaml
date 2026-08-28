@@ -30,8 +30,25 @@ let test_lawful_lens () =
   in
   assert is_valid
 
+let test_sum_lens () =
+  let l1 : (int, string, string, int) Dsh_poly.Poly.lens = {
+    fwd = string_of_int;
+    bwd = (fun orig_int fb -> Printf.sprintf "L_%d_%d" orig_int fb);
+  } in
+  let l2 : (bool, float, string, bool) Dsh_poly.Poly.lens = {
+    fwd = (fun b -> if b then "T" else "F");
+    bwd = (fun orig_b fb -> if fb then 1.0 else 0.0);
+  } in
+  let sum_l = Dsh_poly.Poly.sum l1 l2 in
+  assert (sum_l.fwd (Either.Left 42) = Either.Left "42");
+  assert (sum_l.fwd (Either.Right true) = Either.Right "T");
+  match sum_l.bwd (Either.Left 42) (Dsh_poly.Poly.Sum_left 99) with
+  | Dsh_poly.Poly.Sum_left s -> assert (s = "L_42_99")
+  | _ -> assert false
+
 let () =
   test_id_lens ();
   test_lens_composition ();
   test_lawful_lens ();
+  test_sum_lens ();
   print_endline "[PASS] test_poly completed successfully."

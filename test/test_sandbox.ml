@@ -50,7 +50,27 @@ let test_reversible_tool_execution () =
   assert (!file_state = "original");
   assert (Dsh_core.Context.effect_count ctx = 0)
 
+let test_shell_lexer_and_eval () =
+  let sb = Dsh_plugins.Sandbox.create () in
+  (* Test tokenizing quoted paths *)
+  match Dsh_plugins.Sandbox.tokenize_command "cat \"path with spaces.txt\" 'another arg'" with
+  | Ok tokens ->
+    assert (tokens = ["cat"; "path with spaces.txt"; "another arg"])
+  | Error _ -> assert false;
+
+  (* Test eval_command with quoted filenames *)
+  let _ = Dsh_plugins.Sandbox.write_file sb ~path:"my test script.ml" ~content:"print_endline \"ok\"" in
+  match Dsh_plugins.Sandbox.eval_command sb "cat \"my test script.ml\"" with
+  | Ok (0, out, "") -> assert (out = "print_endline \"ok\"")
+  | _ -> assert false;
+
+  (* Test unclosed quote detection *)
+  match Dsh_plugins.Sandbox.tokenize_command "cat \"unclosed string" with
+  | Error err -> assert (String.length err > 0)
+  | Ok _ -> assert false
+
 let () =
   test_virtual_sandbox ();
   test_reversible_tool_execution ();
+  test_shell_lexer_and_eval ();
   print_endline "[PASS] test_sandbox completed successfully."

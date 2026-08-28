@@ -39,12 +39,18 @@ val tensor :
   ('q_pos, 'q_dir, 'q2_pos, 'q2_dir) lens ->
   ('p_pos * 'q_pos, 'p_dir * 'q_dir, 'p2_pos * 'q2_pos, 'p2_dir * 'q2_dir) lens
 
+(** Coproduct Direction for Polynomial Sum (P + Q) *)
+type ('p_dir, 'q_dir) sum_dir =
+  | Sum_left of 'p_dir
+  | Sum_right of 'q_dir
+  | Sum_mismatch of { expected : string; received : string }
+
 (** Polynomial Sum (P + Q):
     Branching / Choice where system acts as either P or Q. *)
 val sum :
   ('p_pos, 'p_dir, 'p2_pos, 'p2_dir) lens ->
   ('q_pos, 'q_dir, 'q2_pos, 'q2_dir) lens ->
-  (('p_pos, 'q_pos) Either.t, ('p_dir, 'q_dir) Either.t, ('p2_pos, 'q2_pos) Either.t, ('p2_dir, 'q2_dir) Either.t) lens
+  (('p_pos, 'q_pos) Either.t, ('p_dir, 'q_dir) sum_dir, ('p2_pos, 'q2_pos) Either.t, ('p2_dir, 'q2_dir) sum_dir) lens
 
 (** Parallel Product (P * Q):
     Independent outputs; input to either updates that specific subsystem. *)

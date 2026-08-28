@@ -26,6 +26,9 @@ val remove_file : t -> path:string -> (unit, string) result
 (** List all files in sandbox *)
 val list_files : t -> string list
 
+(** Tokenize shell command string supporting single/double quotes and escapes *)
+val tokenize_command : string -> (string list, string) result
+
 (** Execute an in-memory virtual command or script *)
 val eval_command : t -> string -> (int * string * string, string) result
 

@@ -24,6 +24,7 @@ type generation_request = {
   messages : message list;
   max_tokens : int;
   temperature : float;
+  grammar : string option; (** Optional GBNF grammar constraint for structured decoding *)
 }
 
 type generation_response = {
@@ -32,6 +33,26 @@ type generation_response = {
   cache_hit : bool;
   finish_reason : string;
 }
+
+type llama_config = {
+  model_path : string;
+  n_threads : int;
+  n_gpu_layers : int;
+  context_size : int;
+}
+
+type kv_sequence_id = int
+
+(** In-process Llama.cpp provider generator with KV-cache fork support *)
+val create_llama_provider :
+  config:llama_config ->
+  (generation_request -> (generation_response, string) result)
+
+(** Fork KV cache sequence for algebraic effect backtracking (llama_kv_cache_seq_cp) *)
+val fork_kv_cache :
+  seq_src:kv_sequence_id ->
+  seq_dst:kv_sequence_id ->
+  (unit, string) result
 
 type router
 

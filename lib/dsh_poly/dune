@@ -1,0 +1,5 @@
+(library
+ (name dsh_poly)
+ (public_name dsh-oxcaml.poly)
+ (synopsis "Polynomial Functors, Dependent Lenses, and Categorical Cybernetics")
+ (libraries))

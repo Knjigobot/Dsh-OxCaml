@@ -1,0 +1,5 @@
+(library
+ (name dsh_core)
+ (public_name dsh-oxcaml.core)
+ (synopsis "Coalgebraic Agent Engine, Cordis Coeffects, and Revertible Disposal Stack")
+ (libraries dsh_poly unix))

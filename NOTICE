@@ -1,0 +1,11 @@
+Dsh-OxCaml: DeepSeek Agent Harness in OxCaml & Cordis
+Copyright (c) 2026 DeepSeek AI, Cordiverse, Jane Street, Knjigobot, and Dsh-OxCaml Contributors.
+
+This project is an OxCaml native port and categorical formalization of the DeepSeek Agent Harness (DSH)
+built upon the Cordis Spatiotemporal Composability Meta-Framework.
+
+Attributions & Theoretical Foundations:
+- DeepSeek AI: DeepSeek Harness architecture, Agent evaluation benchmarks, EdgeBench scaling laws.
+- Cordiverse (Shigma et al.): Meta-Framework of Spatiotemporal Composability (88-page theoretical foundation).
+- Jane Street: High-assurance OCaml engineering practices, Core/Base modular idioms, mechanical sympathy.
+- David Spivak, Jules Hedges, Matteo Capucci, Nelson Niu: Polynomial Functors (Poly) and Categorical Cybernetics.

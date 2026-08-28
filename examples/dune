@@ -1,0 +1,3 @@
+(executables
+ (names coder_agent multi_agent_team)
+ (libraries dsh_poly dsh_core dsh_plugins dsh_eval unix))

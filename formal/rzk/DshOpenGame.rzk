@@ -1,0 +1,28 @@
+#lang rzk-1
+
+#doc
+  Formalization of Dsh-OxCaml Open Games, Bidirectional Morphisms, and
+  2-Simplex Causality on the Simplicial Directed Interval $\Delta^1$.
+
+#def is-monotone-tick
+  ( t_start : Nat )
+  ( t_end : Nat )
+  : U
+  := (leq t_start t_end)
+
+#def open-game-step
+  ( A : U )
+  ( B : U )
+  ( play : A -> B )
+  ( coplay : A -> B -> A )
+  : U
+  := (a : A) -> (b : B) -> (play a = b) -> (coplay a b = a)
+
+#def dsh-causal-2-simplex
+  ( S : U )
+  ( O : U )
+  ( play : S -> O )
+  ( coplay : S -> O -> S )
+  : (s0 : S) -> (o : O) -> (s1 : S) -> U
+  := \ s0 o s1 ->
+      (play s0 = o) * (coplay s0 o = s1)

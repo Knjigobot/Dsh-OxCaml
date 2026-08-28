@@ -1,0 +1,3 @@
+(tests
+ (names test_poly test_agent test_sandbox test_dst)
+ (libraries dsh_poly dsh_core dsh_plugins dsh_eval unix))

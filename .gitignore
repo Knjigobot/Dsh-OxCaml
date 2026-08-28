@@ -1,0 +1,30 @@
+# Dune / OCaml build artifacts
+_build/
+*.install
+*.opam.locked
+.merlin
+*.cmi
+*.cmo
+*.cmx
+*.cma
+*.cmxa
+*.cmxs
+*.a
+*.o
+*.so
+*.dll
+*.exe
+
+# IDE & OS
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Test / Benchmark outputs
+*.trace
+*.perfetto.json
+logs/
+scratch/

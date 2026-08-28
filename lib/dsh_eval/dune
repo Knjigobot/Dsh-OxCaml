@@ -1,0 +1,5 @@
+(library
+ (name dsh_eval)
+ (public_name dsh-oxcaml.eval)
+ (synopsis "Deterministic Simulation Testing (DST) and EdgeBench Scaling Laws")
+ (libraries dsh_poly dsh_core dsh_plugins unix))

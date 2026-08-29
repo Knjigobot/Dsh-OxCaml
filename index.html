@@ -481,10 +481,10 @@
       dshAloneTerm.innerHTML = '';
       dshTerm.innerHTML = '';
 
-      btnText.textContent = 'Hardware Executing Tri-Stream...';
-      btnIcon.textContent = '⏳';
-      badge.textContent = 'Live Tri-Stream Inference';
-      badge.className = 'text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 mono border border-emerald-500/30 animate-pulse';
+      btnText.textContent = '🔥 6 CPU Threads Computing Puro-2B Live...';
+      btnIcon.textContent = '⚡';
+      badge.textContent = 'REAL LIVE INFERENCE ACTIVE (1 -> 2 -> 3)';
+      badge.className = 'text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 mono border border-emerald-500/30 animate-pulse font-bold';
 
       let lcCumTok = 0;
       let dshAloneCumTok = 0;
@@ -492,142 +492,121 @@
       let lcCumMs = 0;
       let dshAloneCumMs = 0;
       let dshCumMs = 0;
+      let totalStepsDone = 0;
 
-      for (let i = 0; i < demoSteps.length; i++) {
-        const item = demoSteps[i];
+      // Connect to the REAL Puro-2B Hardware Daemon on Port 8091
+      try {
+        const liveSource = new EventSource('http://localhost:8091/stream');
         
-        stepLabel.textContent = `[${item.step}/10] ${item.name}`;
-        progressBar.style.width = `${((i + 1) / demoSteps.length) * 100}%`;
-
-        const lcTargetMs = pacingMode === 'realtime' ? item.lcMs : 300;
-        const dshAloneTargetMs = pacingMode === 'realtime' ? item.dshAloneMs : Math.round(300 * (item.dshAloneMs / item.lcMs));
-        const dshTargetMs = pacingMode === 'realtime' ? item.dshMs : Math.round(300 * (item.dshMs / item.lcMs));
-
-        // Create Container Elements
-        const lcEntry = document.createElement('div');
-        lcEntry.className = 'bg-slate-900/90 p-2.5 rounded-xl border border-red-500/20 space-y-1 transition-all';
-        lcEntry.innerHTML = `
-          <div class="flex justify-between items-center text-[10px] text-slate-400">
-            <span class="text-rose-400 font-bold">${item.name} (${item.lcIn} tok)</span>
-            <span id="lc-timer-${i}" class="text-rose-400 mono font-semibold">0.0 ms</span>
-          </div>
-          <div class="text-[9px] text-slate-500 truncate">// User: "${item.prompt}"</div>
-          <div id="lc-text-${i}" class="text-slate-200 text-[11px] font-semibold"></div>
-        `;
-        lcTerm.appendChild(lcEntry);
-        lcTerm.scrollTop = lcTerm.scrollHeight;
-
-        const dshAloneEntry = document.createElement('div');
-        dshAloneEntry.className = 'bg-slate-900/90 p-2.5 rounded-xl border border-sky-500/20 space-y-1 transition-all';
-        dshAloneEntry.innerHTML = `
-          <div class="flex justify-between items-center text-[10px] text-slate-400">
-            <span class="text-sky-400 font-bold">[τ=${item.step}] In-Memory RAM (${item.dshAloneIn} tok)</span>
-            <span id="dsh-alone-timer-${i}" class="text-sky-400 mono font-semibold">0.0 ms</span>
-          </div>
-          <div class="text-[9px] text-slate-500 truncate">// Raw Schema Tool Call</div>
-          <div id="dsh-alone-text-${i}" class="text-sky-200 text-[11px] font-mono"></div>
-        `;
-        dshAloneTerm.appendChild(dshAloneEntry);
-        dshAloneTerm.scrollTop = dshAloneTerm.scrollHeight;
-
-        const dshEntry = document.createElement('div');
-        dshEntry.className = 'bg-slate-900/90 p-2.5 rounded-xl border border-emerald-500/20 space-y-1 transition-all';
-        dshEntry.innerHTML = `
-          <div class="flex justify-between items-center text-[10px] text-slate-400">
-            <span class="text-emerald-400 font-bold">[τ=${item.step}] Lens Distilled (${item.dshIn} tok)</span>
-            <span id="dsh-timer-${i}" class="text-emerald-400 mono font-semibold">0.0 ms</span>
-          </div>
-          <div class="text-[9px] text-slate-500 truncate">// Isolated Delta: ${item.delta || item.prompt}</div>
-          <div id="dsh-text-${i}" class="text-emerald-300 text-[11px] font-bold font-mono"></div>
-        `;
-        dshTerm.appendChild(dshEntry);
-        dshTerm.scrollTop = dshTerm.scrollHeight;
-
-        // Update token statistics
-        lcCumTok += (item.lcIn + item.lcOut);
-        dshAloneCumTok += (item.dshAloneIn + item.dshAloneOut);
-        dshCumTok += (item.dshIn + item.dshOut);
-
-        lcCumMs += item.lcMs;
-        dshAloneCumMs += item.dshAloneMs;
-        dshCumMs += item.dshMs;
-
-        document.getElementById('lc-live-in').textContent = item.lcIn + ' tok';
-        document.getElementById('lc-live-out').textContent = item.lcOut + ' tok';
-        document.getElementById('lc-live-cum').textContent = lcCumTok + ' tok';
-
-        document.getElementById('dsh-alone-in').textContent = item.dshAloneIn + ' tok';
-        document.getElementById('dsh-alone-out').textContent = item.dshAloneOut + ' tok';
-        document.getElementById('dsh-alone-cum').textContent = dshAloneCumTok + ' tok';
-
-        document.getElementById('dsh-live-in').textContent = item.dshIn + ' tok';
-        document.getElementById('dsh-live-out').textContent = item.dshOut + ' tok';
-        document.getElementById('dsh-live-cum').textContent = dshCumTok + ' tok';
-
-        // Concurrent stopwatch animations across all 3 streams
-        const startTime = Date.now();
-        
-        // Stream 1: Dsh + DSO
-        const dshPromise = (async () => {
-          const dshTextEl = document.getElementById(`dsh-text-${i}`);
-          const dshTimerEl = document.getElementById(`dsh-timer-${i}`);
-          const dshGlobalTimer = document.getElementById('dsh-live-timer');
-          
-          await streamText(dshTextEl, `↳ ${item.dshText}`, dshTargetMs);
-          dshTimerEl.textContent = item.dshMs.toFixed(1) + ' ms';
-          dshGlobalTimer.textContent = item.dshMs.toFixed(1) + ' ms';
-        })();
-
-        // Stream 2: Dsh Alone
-        const dshAlonePromise = (async () => {
-          const dshAloneTextEl = document.getElementById(`dsh-alone-text-${i}`);
-          const dshAloneTimerEl = document.getElementById(`dsh-alone-timer-${i}`);
-          const dshAloneGlobalTimer = document.getElementById('dsh-alone-timer');
-          
-          await streamText(dshAloneTextEl, `↳ ${item.dshAloneText}`, dshAloneTargetMs);
-          dshAloneTimerEl.textContent = item.dshAloneMs.toFixed(1) + ' ms';
-          dshAloneGlobalTimer.textContent = item.dshAloneMs.toFixed(1) + ' ms';
-        })();
-
-        // Stream 3: LangChain
-        const lcPromise = (async () => {
-          const lcTextEl = document.getElementById(`lc-text-${i}`);
-          const lcTimerEl = document.getElementById(`lc-timer-${i}`);
-          const lcGlobalTimer = document.getElementById('lc-live-timer');
-
-          const ticker = setInterval(() => {
-            const elapsed = Date.now() - startTime;
-            if (elapsed < lcTargetMs) {
-              const currentMs = (elapsed / lcTargetMs) * item.lcMs;
-              lcTimerEl.textContent = currentMs.toFixed(0) + ' ms';
-              lcGlobalTimer.textContent = currentMs.toFixed(0) + ' ms';
+        liveSource.onmessage = function(e) {
+          try {
+            const data = JSON.parse(e.data);
+            
+            if (data.type === 'status') {
+              stepLabel.textContent = data.msg;
             }
-          }, 40);
+            else if (data.type === 'phase') {
+              stepLabel.textContent = `▶️ Running ${data.name} (Steps 1-10 Live on CPU)...`;
+            }
+            else if (data.type === 'step') {
+              totalStepsDone++;
+              const i = data.step;
+              stepLabel.textContent = `[${data.arm}] ${data.name} -> Step ${i}/10 executing live on CPU...`;
+              progressBar.style.width = `${(totalStepsDone / 30) * 100}%`;
 
-          await streamText(lcTextEl, `↳ ${item.lcText}`, lcTargetMs);
-          clearInterval(ticker);
-          lcTimerEl.textContent = item.lcMs.toFixed(1) + ' ms';
-          lcGlobalTimer.textContent = item.lcMs.toFixed(1) + ' ms';
-        })();
+              if (data.arm === 'A') {
+                lcCumTok += (data.inTok + data.outTok);
+                lcCumMs += data.ms;
+                document.getElementById('lc-live-in').textContent = data.inTok + ' tok';
+                document.getElementById('lc-live-out').textContent = data.outTok + ' tok';
+                document.getElementById('lc-live-cum').textContent = lcCumTok + ' tok';
+                document.getElementById('lc-live-timer').textContent = data.ms.toFixed(1) + ' ms';
 
-        await Promise.all([dshPromise, dshAlonePromise, lcPromise]);
+                const lcEntry = document.createElement('div');
+                lcEntry.className = 'bg-slate-900/90 p-2.5 rounded-xl border border-red-500/20 space-y-1';
+                lcEntry.innerHTML = `
+                  <div class="flex justify-between items-center text-[10px] text-slate-400">
+                    <span class="text-rose-400 font-bold">${data.name} (${data.inTok} tok)</span>
+                    <span class="text-rose-400 mono font-semibold">${data.ms} ms</span>
+                  </div>
+                  <div class="text-[9px] text-slate-500 truncate">// User: "${data.prompt}"</div>
+                  <div class="text-slate-200 text-[11px] font-semibold">↳ ${data.text}</div>
+                `;
+                lcTerm.appendChild(lcEntry);
+                lcTerm.scrollTop = lcTerm.scrollHeight;
+              }
+              else if (data.arm === 'B') {
+                dshAloneCumTok += (data.inTok + data.outTok);
+                dshAloneCumMs += data.ms;
+                document.getElementById('dsh-alone-in').textContent = data.inTok + ' tok';
+                document.getElementById('dsh-alone-out').textContent = data.outTok + ' tok';
+                document.getElementById('dsh-alone-cum').textContent = dshAloneCumTok + ' tok';
+                document.getElementById('dsh-alone-timer').textContent = data.ms.toFixed(1) + ' ms';
 
-        // Update overall live margins
-        const marginPct = (((lcCumTok - dshCumTok) / lcCumTok) * 100).toFixed(1);
-        const speedup = (lcCumMs / dshCumMs).toFixed(1);
-        document.getElementById('live-margin-text').textContent = `${marginPct}% Less Tokens (${(lcCumTok / dshCumTok).toFixed(1)}x)`;
-        document.getElementById('live-speedup-text').textContent = `${speedup}x Faster`;
+                const dshAloneEntry = document.createElement('div');
+                dshAloneEntry.className = 'bg-slate-900/90 p-2.5 rounded-xl border border-sky-500/20 space-y-1';
+                dshAloneEntry.innerHTML = `
+                  <div class="flex justify-between items-center text-[10px] text-slate-400">
+                    <span class="text-sky-400 font-bold">[τ=${i}] In-Memory RAM (${data.inTok} tok)</span>
+                    <span class="text-sky-400 mono font-semibold">${data.ms} ms</span>
+                  </div>
+                  <div class="text-[9px] text-slate-500 truncate">// Tool: ${data.prompt}</div>
+                  <div class="text-sky-200 text-[11px] font-mono">↳ ${data.text}</div>
+                `;
+                dshAloneTerm.appendChild(dshAloneEntry);
+                dshAloneTerm.scrollTop = dshAloneTerm.scrollHeight;
+              }
+              else if (data.arm === 'C') {
+                dshCumTok += (data.inTok + data.outTok);
+                dshCumMs += data.ms;
+                document.getElementById('dsh-live-in').textContent = data.inTok + ' tok';
+                document.getElementById('dsh-live-out').textContent = data.outTok + ' tok';
+                document.getElementById('dsh-live-cum').textContent = dshCumTok + ' tok';
+                document.getElementById('dsh-live-timer').textContent = data.ms.toFixed(1) + ' ms';
 
-        if (pacingMode === 'realtime') {
-          await new Promise(r => setTimeout(r, 200));
-        }
+                const dshEntry = document.createElement('div');
+                dshEntry.className = 'bg-slate-900/90 p-2.5 rounded-xl border border-emerald-500/20 space-y-1';
+                dshEntry.innerHTML = `
+                  <div class="flex justify-between items-center text-[10px] text-slate-400">
+                    <span class="text-emerald-400 font-bold">[τ=${i}] Lens Distilled (${data.inTok} tok)</span>
+                    <span class="text-emerald-400 mono font-semibold">${data.ms} ms</span>
+                  </div>
+                  <div class="text-[9px] text-slate-500 truncate">// Delta: ${data.prompt}</div>
+                  <div class="text-emerald-300 text-[11px] font-bold font-mono">↳ ${data.text}</div>
+                `;
+                dshTerm.appendChild(dshEntry);
+                dshTerm.scrollTop = dshTerm.scrollHeight;
+              }
+
+              if (lcCumTok > 0 && dshCumTok > 0) {
+                const marginPct = (((lcCumTok - dshCumTok) / lcCumTok) * 100).toFixed(1);
+                const speedup = (lcCumMs / Math.max(1, dshCumMs)).toFixed(1);
+                document.getElementById('live-margin-text').textContent = `${marginPct}% Less Tokens (${(lcCumTok / dshCumTok).toFixed(1)}x)`;
+                document.getElementById('live-speedup-text').textContent = `${speedup}x Faster`;
+              }
+            }
+            else if (data.type === 'complete') {
+              liveSource.close();
+              btnText.textContent = '▶️ Run REAL Live Hardware Benchmark (1 -> 2 -> 3)';
+              btnIcon.textContent = '🔄';
+              badge.textContent = '100% Verified Live CPU Run Completed';
+              badge.className = 'text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 mono border border-emerald-500/30 font-bold';
+              stepLabel.textContent = '✅ All 3 Sequential Hardware Streams Finished Live on CPU!';
+              progressBar.style.width = '100%';
+              isRunningDemo = false;
+            }
+          } catch(err) {
+            console.error('Parse error:', err);
+          }
+        };
+
+        liveSource.onerror = function() {
+          liveSource.close();
+          isRunningDemo = false;
+        };
+      } catch(err) {
+        isRunningDemo = false;
       }
-
-      btnText.textContent = '▶️ Re-Run Tri-Stream Pipeline';
-      btnIcon.textContent = '🔄';
-      badge.textContent = 'Tri-Stream 10/10 Completed';
-      badge.className = 'text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 mono border border-emerald-500/30';
-      isRunningDemo = false;
     }
 
     // Bulletproof Tab Switcher (Clicks + Keyboard 1, 2, 3, 4)

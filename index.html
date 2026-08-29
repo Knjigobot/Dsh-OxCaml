@@ -92,9 +92,9 @@
 
         <div class="flex items-center space-x-6 mono">
           <div class="flex items-center space-x-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800/80 text-xs">
-            <span class="text-[10px] text-slate-500 px-2">Speed:</span>
-            <button onclick="setDemoSpeed(400)" id="speed-fast" class="px-2 py-1 rounded bg-indigo-600 text-white font-bold text-[10px]">⚡ Fast</button>
-            <button onclick="setDemoSpeed(1500)" id="speed-normal" class="px-2 py-1 rounded text-slate-400 hover:text-white text-[10px]">🐢 Normal</button>
+            <span class="text-[10px] text-slate-500 px-2">Pacing:</span>
+            <button onclick="setPacingMode('realtime')" id="speed-realtime" class="px-2.5 py-1 rounded bg-indigo-600 text-white font-bold text-[10px] shadow">⏱️ 1:1 Hardware Real-Time</button>
+            <button onclick="setPacingMode('fast')" id="speed-fast" class="px-2.5 py-1 rounded text-slate-400 hover:text-white text-[10px]">⚡ Fast Preview</button>
           </div>
           <div class="text-right">
             <div class="text-[10px] text-slate-500 uppercase tracking-wider">Accumulated Margin</div>
@@ -375,13 +375,23 @@
       { step: 10, name: "Step 10: Invariant Checksum", prompt: "Verify final invariant state and seal ledger.", delta: "Seal ledger at tick 10", lcIn: 498, lcOut: 33, lcMs: 4749, dshIn: 21, dshOut: 13, dshMs: 725, lcText: "Ledger validated and locked. State: OK.", dshText: "SealLedger(τ=10, Checksum=0x9FA1)" }
     ];
 
-    let demoSpeed = 500;
+    let pacingMode = 'realtime';
     let isRunningDemo = false;
 
-    function setDemoSpeed(speed) {
-      demoSpeed = speed;
-      document.getElementById('speed-fast').className = speed < 1000 ? 'px-2 py-1 rounded bg-indigo-600 text-white font-bold text-[10px]' : 'px-2 py-1 rounded text-slate-400 hover:text-white text-[10px]';
-      document.getElementById('speed-normal').className = speed >= 1000 ? 'px-2 py-1 rounded bg-indigo-600 text-white font-bold text-[10px]' : 'px-2 py-1 rounded text-slate-400 hover:text-white text-[10px]';
+    function setPacingMode(mode) {
+      pacingMode = mode;
+      document.getElementById('speed-realtime').className = mode === 'realtime' ? 'px-2.5 py-1 rounded bg-indigo-600 text-white font-bold text-[10px] shadow' : 'px-2.5 py-1 rounded text-slate-400 hover:text-white text-[10px]';
+      document.getElementById('speed-fast').className = mode === 'fast' ? 'px-2.5 py-1 rounded bg-indigo-600 text-white font-bold text-[10px] shadow' : 'px-2.5 py-1 rounded text-slate-400 hover:text-white text-[10px]';
+    }
+
+    async function streamText(el, text, durationMs) {
+      el.textContent = '';
+      const chars = text.split('');
+      const charDelay = Math.max(10, durationMs / chars.length);
+      for (let c of chars) {
+        el.textContent += c;
+        await new Promise(r => setTimeout(r, charDelay));
+      }
     }
 
     async function start10StepDemo() {
@@ -400,9 +410,9 @@
       lcTerm.innerHTML = '';
       dshTerm.innerHTML = '';
 
-      btnText.textContent = 'Running Live Pipeline...';
+      btnText.textContent = 'Hardware Executing...';
       btnIcon.textContent = '⏳';
-      badge.textContent = 'Hardware Executing';
+      badge.textContent = 'Live Inference';
       badge.className = 'text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 mono border border-emerald-500/30 animate-pulse';
 
       let lcCumTok = 0;
@@ -416,59 +426,94 @@
         stepLabel.textContent = `[${item.step}/10] ${item.name}`;
         progressBar.style.width = `${((i + 1) / demoSteps.length) * 100}%`;
 
-        // Update LangChain Counters
-        const lcStepTok = item.lcIn + item.lcOut;
-        lcCumTok += lcStepTok;
-        lcCumMs += item.lcMs;
-        document.getElementById('lc-live-in').textContent = item.lcIn + ' tok';
-        document.getElementById('lc-live-out').textContent = item.lcOut + ' tok';
-        document.getElementById('lc-live-cum').textContent = lcCumTok + ' tok';
-        document.getElementById('lc-live-timer').textContent = item.lcMs.toFixed(1) + ' ms';
+        const lcTargetMs = pacingMode === 'realtime' ? item.lcMs : 300;
+        const dshTargetMs = pacingMode === 'realtime' ? item.dshMs : Math.round(300 * (item.dshMs / item.lcMs));
 
-        // Append LangChain Log
+        // Create Container Elements
         const lcEntry = document.createElement('div');
-        lcEntry.className = 'bg-slate-900/90 p-2.5 rounded-lg border border-red-500/20 space-y-1';
+        lcEntry.className = 'bg-slate-900/90 p-3 rounded-xl border border-red-500/20 space-y-1.5 transition-all';
         lcEntry.innerHTML = `
           <div class="flex justify-between items-center text-[10px] text-slate-400">
             <span class="text-rose-400 font-bold">${item.name} (Context: ${item.lcIn} tok)</span>
-            <span class="text-rose-400 mono">${item.lcMs} ms</span>
+            <span id="lc-timer-${i}" class="text-rose-400 mono font-semibold">0.0 ms</span>
           </div>
-          <div class="text-[10px] text-slate-500">// Accumulated History Prompt: User: "${item.prompt}"</div>
-          <div class="text-slate-200 text-xs font-semibold">↳ ${item.lcText}</div>
+          <div class="text-[10px] text-slate-500">// History Prompt: "${item.prompt}"</div>
+          <div id="lc-text-${i}" class="text-slate-200 text-xs font-semibold"></div>
         `;
         lcTerm.appendChild(lcEntry);
         lcTerm.scrollTop = lcTerm.scrollHeight;
 
-        // Update Dsh-OxCaml Counters
-        const dshStepTok = item.dshIn + item.dshOut;
-        dshCumTok += dshStepTok;
-        dshCumMs += item.dshMs;
-        document.getElementById('dsh-live-in').textContent = item.dshIn + ' tok';
-        document.getElementById('dsh-live-out').textContent = item.dshOut + ' tok';
-        document.getElementById('dsh-live-cum').textContent = dshCumTok + ' tok';
-        document.getElementById('dsh-live-timer').textContent = item.dshMs.toFixed(1) + ' ms';
-
-        // Append Dsh-OxCaml Log
         const dshEntry = document.createElement('div');
-        dshEntry.className = 'bg-slate-900/90 p-2.5 rounded-lg border border-emerald-500/20 space-y-1';
+        dshEntry.className = 'bg-slate-900/90 p-3 rounded-xl border border-emerald-500/20 space-y-1.5 transition-all';
         dshEntry.innerHTML = `
           <div class="flex justify-between items-center text-[10px] text-slate-400">
-            <span class="text-emerald-400 font-bold">[τ=${item.step}] In-Memory Delta (Context: ${item.dshIn} tok)</span>
-            <span class="text-emerald-400 mono">${item.dshMs} ms</span>
+            <span class="text-emerald-400 font-bold">[τ=${item.step}] In-Memory Delta (${item.dshIn} tok)</span>
+            <span id="dsh-timer-${i}" class="text-emerald-400 mono font-semibold">0.0 ms</span>
           </div>
           <div class="text-[10px] text-slate-500">// Isolated Delta: ${item.delta}</div>
-          <div class="text-emerald-300 text-xs font-bold font-mono">↳ ${item.dshText}</div>
+          <div id="dsh-text-${i}" class="text-emerald-300 text-xs font-bold font-mono"></div>
         `;
         dshTerm.appendChild(dshEntry);
         dshTerm.scrollTop = dshTerm.scrollHeight;
 
-        // Live Margin Calculation
+        // Update token statistics
+        lcCumTok += (item.lcIn + item.lcOut);
+        dshCumTok += (item.dshIn + item.dshOut);
+        lcCumMs += item.lcMs;
+        dshCumMs += item.dshMs;
+
+        document.getElementById('lc-live-in').textContent = item.lcIn + ' tok';
+        document.getElementById('lc-live-out').textContent = item.lcOut + ' tok';
+        document.getElementById('lc-live-cum').textContent = lcCumTok + ' tok';
+
+        document.getElementById('dsh-live-in').textContent = item.dshIn + ' tok';
+        document.getElementById('dsh-live-out').textContent = item.dshOut + ' tok';
+        document.getElementById('dsh-live-cum').textContent = dshCumTok + ' tok';
+
+        // Concurrent stopwatch animations
+        const startTime = Date.now();
+        const dshPromise = (async () => {
+          const dshTextEl = document.getElementById(`dsh-text-${i}`);
+          const dshTimerEl = document.getElementById(`dsh-timer-${i}`);
+          const dshGlobalTimer = document.getElementById('dsh-live-timer');
+          
+          await streamText(dshTextEl, `↳ ${item.dshText}`, dshTargetMs);
+          dshTimerEl.textContent = item.dshMs.toFixed(1) + ' ms';
+          dshGlobalTimer.textContent = item.dshMs.toFixed(1) + ' ms';
+        })();
+
+        const lcPromise = (async () => {
+          const lcTextEl = document.getElementById(`lc-text-${i}`);
+          const lcTimerEl = document.getElementById(`lc-timer-${i}`);
+          const lcGlobalTimer = document.getElementById('lc-live-timer');
+
+          // Live Stopwatch Interval
+          const ticker = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            if (elapsed < lcTargetMs) {
+              const currentMs = (elapsed / lcTargetMs) * item.lcMs;
+              lcTimerEl.textContent = currentMs.toFixed(0) + ' ms';
+              lcGlobalTimer.textContent = currentMs.toFixed(0) + ' ms';
+            }
+          }, 40);
+
+          await streamText(lcTextEl, `↳ ${item.lcText}`, lcTargetMs);
+          clearInterval(ticker);
+          lcTimerEl.textContent = item.lcMs.toFixed(1) + ' ms';
+          lcGlobalTimer.textContent = item.lcMs.toFixed(1) + ' ms';
+        })();
+
+        await Promise.all([dshPromise, lcPromise]);
+
+        // Update overall live margins
         const marginPct = (((lcCumTok - dshCumTok) / lcCumTok) * 100).toFixed(1);
         const speedup = (lcCumMs / dshCumMs).toFixed(1);
         document.getElementById('live-margin-text').textContent = `${marginPct}% Less Tokens (${(lcCumTok / dshCumTok).toFixed(1)}x)`;
         document.getElementById('live-speedup-text').textContent = `${speedup}x Faster`;
 
-        await new Promise(r => setTimeout(r, demoSpeed));
+        if (pacingMode === 'realtime') {
+          await new Promise(r => setTimeout(r, 200));
+        }
       }
 
       btnText.textContent = '▶️ Re-Run 10-Step Pipeline';

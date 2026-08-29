@@ -5,6 +5,7 @@ from llama_cpp import Llama
 
 MODEL_PATH = r"c:\Users\asd\Documents\cordisoxcaml\models\Puro-2B-Base.Q4_K_M.gguf"
 PORT = 8095
+SERVER_START_TIME = time.time()
 
 print(f"[Cordis-SGLang] Initializing Puro-2B (1.28 GB) on 6 CPU threads...")
 llm = Llama(model_path=MODEL_PATH, n_ctx=2048, verbose=False, n_threads=6)
@@ -68,7 +69,7 @@ class RadixPrefixTree:
             self.history.append(entry)
             if mode == "chat":
                 self.chat_history.append((prompt, response))
-                if len(self.chat_history) > 4:
+                if len(self.chat_history) > 6:
                     self.chat_history.pop(0)
             return entry
 
@@ -98,7 +99,6 @@ Puro: I really enjoy OCaml for its high speed, type safety, and clean algebraic 
 
 def build_dso_prompt(user_input, mode="chat"):
     if mode == "chat":
-        # Build conversational multi-turn with DSO few-shot alignment
         history_str = ""
         for h_user, h_bot in radix_engine.chat_history[-3:]:
             history_str += f"\nHuman: {h_user}\nPuro: {h_bot}\n"
@@ -106,12 +106,11 @@ def build_dso_prompt(user_input, mode="chat"):
         full_prompt = f"{DSO_CHAT_PREFIX}{history_str}\nHuman: {user_input}\nPuro:"
         return full_prompt, ["\nHuman:", "\n\nHuman:", "Human:", "\n\n\n", "User:"]
     else:
-        # Algebraic Lens Mode
         full_prompt = f"System: You are an execution ledger tracking portfolio state.\nUser: {user_input}\nState: "
         return full_prompt, ["\n", "User:"]
 
 # =========================================================================
-# WEB UI DASHBOARD
+# WEB UI DASHBOARD (Persistent Chat Messenger + Zero-F5 HMR)
 # =========================================================================
 INDEX_HTML = """<!DOCTYPE html>
 <html lang="en" class="dark">
@@ -232,7 +231,7 @@ INDEX_HTML = """<!DOCTYPE html>
       </div>
     </div>
 
-    <!-- RIGHT PANEL: Live Conversational Stream Terminal -->
+    <!-- RIGHT PANEL: Live Persistent Conversational Stream Terminal -->
     <div class="flex-1 bg-panel border border-slate-800 rounded-2xl p-4 flex flex-col justify-between overflow-hidden shadow-xl glow-indigo">
       <div class="flex flex-col flex-1 overflow-hidden">
         
@@ -240,7 +239,7 @@ INDEX_HTML = """<!DOCTYPE html>
         <div class="flex justify-between items-center pb-3 border-b border-slate-800">
           <div class="flex items-center space-x-2">
             <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
-            <span id="term-title" class="text-xs font-bold uppercase tracking-wider mono text-slate-200">💬 Live Puro-2B Conversation</span>
+            <span id="term-title" class="text-xs font-bold uppercase tracking-wider mono text-slate-200">💬 Live Puro-2B Persistent Conversation</span>
           </div>
           <div class="flex items-center space-x-3 text-xs mono">
             <span class="text-slate-400">TTFT: <strong id="term-ttft" class="text-emerald-400">0 ms</strong></span>
@@ -249,8 +248,8 @@ INDEX_HTML = """<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Terminal Output Stream -->
-        <div id="terminal-box" class="flex-1 bg-slate-950 rounded-xl p-4 my-3 border border-slate-800/80 mono text-xs overflow-auto space-y-3 text-slate-300">
+        <!-- Chat History Stream (Persists All Older Turns!) -->
+        <div id="terminal-box" class="flex-1 bg-slate-950 rounded-xl p-4 my-3 border border-slate-800/80 mono text-xs overflow-auto space-y-4 text-slate-300">
           <div class="text-slate-500">// DSO Conversational alignment loaded. Say hello or ask Puro-2B anything!</div>
         </div>
 
@@ -288,13 +287,14 @@ INDEX_HTML = """<!DOCTYPE html>
   <script>
     let isGenerating = false;
     let currentMode = 'chat';
+    let turnCounter = 0;
 
     function setMode(m) {
       currentMode = m;
       if (m === 'chat') {
         document.getElementById('mode-chat').className = 'px-3 py-1 rounded-lg bg-indigo-600 text-white font-bold transition-all flex items-center space-x-1';
         document.getElementById('mode-lens').className = 'px-3 py-1 rounded-lg text-slate-400 hover:text-white transition-all flex items-center space-x-1';
-        document.getElementById('term-title').textContent = '💬 Live Puro-2B Conversation (DSO Aligned)';
+        document.getElementById('term-title').textContent = '💬 Live Puro-2B Persistent Conversation (DSO Aligned)';
         document.getElementById('user-input').placeholder = 'Type a message to chat with Puro-2B in natural conversational English...';
         
         document.getElementById('quick-buttons').innerHTML = `
@@ -375,7 +375,7 @@ INDEX_HTML = """<!DOCTYPE html>
         
         const term = document.getElementById('terminal-box');
         const alertDiv = document.createElement('div');
-        alertDiv.className = 'bg-rose-500/10 border border-rose-500/30 p-2.5 rounded-xl text-rose-300 text-xs';
+        alertDiv.className = 'bg-rose-500/10 border border-rose-500/30 p-2.5 rounded-xl text-rose-300 text-xs my-2';
         alertDiv.innerHTML = `<strong>⏪ Causal Rollback Executed:</strong> State and Radix prefix tree rewound to tick τ = ${data.current_tick} in 0.01ms!`;
         term.appendChild(alertDiv);
         term.scrollTop = term.scrollHeight;
@@ -394,37 +394,45 @@ INDEX_HTML = """<!DOCTYPE html>
 
       input.value = '';
       isGenerating = true;
-      document.getElementById('send-btn').textContent = 'Thinking... ⏳';
+      turnCounter++;
+      const currentTurnId = turnCounter;
 
+      document.getElementById('send-btn').textContent = 'Thinking... ⏳';
       const term = document.getElementById('terminal-box');
       
-      // User message block
+      // User message block (Unique DOM container)
       const userBlock = document.createElement('div');
-      userBlock.className = 'bg-slate-900/90 p-3 rounded-xl border border-indigo-500/30 space-y-1';
+      userBlock.className = 'bg-slate-900/90 p-3 rounded-xl border border-indigo-500/30 space-y-1 my-2 transition-all';
       userBlock.innerHTML = `
         <div class="flex justify-between items-center text-[10px] text-slate-400">
-          <span class="text-indigo-400 font-bold">YOU</span>
-          <span class="text-emerald-400 mono font-semibold">⚡ SGLang Radix Matched</span>
+          <span class="text-indigo-400 font-bold flex items-center gap-1.5">
+            <span>👤</span>
+            <span>YOU</span>
+          </span>
+          <span class="text-emerald-400 mono font-semibold">⚡ SGLang Radix Cached</span>
         </div>
-        <div class="text-slate-100 text-xs font-semibold">${promptText}</div>
+        <div class="text-slate-100 text-xs font-semibold whitespace-pre-wrap">${promptText}</div>
       `;
       term.appendChild(userBlock);
 
-      // Model Stream Block
+      // Model Stream Block (Unique DOM container with unique turn ID)
       const modelBlock = document.createElement('div');
-      modelBlock.className = 'bg-slate-900/90 p-3 rounded-xl border border-emerald-500/30 space-y-1';
+      modelBlock.className = 'bg-slate-900/90 p-3 rounded-xl border border-emerald-500/30 space-y-1.5 my-2 transition-all glow-emerald';
       modelBlock.innerHTML = `
-        <div class="flex justify-between items-center text-[10px] text-slate-400">
-          <span class="text-emerald-400 font-bold">PURO-2B</span>
-          <span id="active-ms" class="text-emerald-400 mono font-semibold">0.0 ms</span>
+        <div class="flex justify-between items-center text-[10px] text-slate-400 border-b border-slate-800/80 pb-1.5">
+          <span class="text-emerald-400 font-bold flex items-center gap-1.5">
+            <span>🤖</span>
+            <span>PURO-2B</span>
+          </span>
+          <span id="turn-ms-${currentTurnId}" class="text-emerald-400 mono font-semibold">0.0 ms</span>
         </div>
-        <div id="active-output" class="text-emerald-300 text-xs font-mono font-medium whitespace-pre-wrap"></div>
+        <div id="turn-output-${currentTurnId}" class="text-emerald-300 text-xs font-mono font-medium whitespace-pre-wrap leading-relaxed"></div>
       `;
       term.appendChild(modelBlock);
       term.scrollTop = term.scrollHeight;
 
-      const outEl = document.getElementById('active-output');
-      const msEl = document.getElementById('active-ms');
+      const outEl = document.getElementById(`turn-output-${currentTurnId}`);
+      const msEl = document.getElementById(`turn-ms-${currentTurnId}`);
 
       try {
         const response = await fetch('/api/generate_stream', {
@@ -469,6 +477,27 @@ INDEX_HTML = """<!DOCTYPE html>
       document.getElementById('send-btn').textContent = 'Send ▶';
     }
 
+    // ⚡ ZERO-F5 LIVE HOT-RELOAD HEARTBEAT
+    let initialServerTime = null;
+    let isReloading = false;
+
+    setInterval(async () => {
+      if (isReloading) return;
+      try {
+        const res = await fetch('/api/version?t=' + Date.now(), { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (initialServerTime === null) {
+            initialServerTime = data.startTime;
+          } else if (data.startTime && data.startTime !== initialServerTime) {
+            isReloading = true;
+            console.log('[Cordis-HMR] Server restart detected! Hot-reloading DOM without manual F5...');
+            location.reload();
+          }
+        }
+      } catch(e) {}
+    }, 300);
+
     // Initial load
     fetchTree();
   </script>
@@ -495,6 +524,13 @@ class SGLangCordisHandler(BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(INDEX_HTML.encode("utf-8"))
+        elif parsed.path == "/api/version":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(json.dumps({"startTime": SERVER_START_TIME}).encode("utf-8"))
         elif parsed.path == "/api/tree":
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
@@ -540,7 +576,6 @@ class SGLangCordisHandler(BaseHTTPRequestHandler):
             user_prompt = req_data.get("prompt", "")
             mode = req_data.get("mode", "chat")
             
-            # SGLang Radix Matching & DSO Prompt Teleprompting
             full_prompt, stop_tokens = build_dso_prompt(user_prompt, mode=mode)
             
             t0 = time.time()
@@ -548,10 +583,9 @@ class SGLangCordisHandler(BaseHTTPRequestHandler):
             token_count = 0
             full_output = ""
 
-            # Stream tokens live from Puro-2B with DSO repetition penalty
             for chunk in llm(
                 full_prompt,
-                max_tokens=100 if mode == "chat" else 30,
+                max_tokens=120 if mode == "chat" else 30,
                 stop=stop_tokens,
                 temperature=0.7 if mode == "chat" else 0.1,
                 top_p=0.9,
@@ -580,7 +614,6 @@ class SGLangCordisHandler(BaseHTTPRequestHandler):
                 self.wfile.write(f"data: {json.dumps(data)}\n\n".encode("utf-8"))
                 self.wfile.flush()
 
-            # Record into Cordis Radix Tree
             clean_resp = full_output.strip()
             radix_engine.insert_branch(user_prompt, clean_resp, mode=mode)
             

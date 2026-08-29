@@ -1,6 +1,6 @@
 import time, json, os, sys, threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse
 from llama_cpp import Llama
 
 MODEL_PATH = r"c:\Users\asd\Documents\cordisoxcaml\models\Puro-2B-Base.Q4_K_M.gguf"
@@ -29,15 +29,13 @@ class RadixPrefixTree:
         self.current_tick = 1
         self.node_counter = 0
         self.history = []
+        self.chat_history = []
         self.lock = threading.Lock()
 
     def get_longest_matching_prefix(self, prompt):
         with self.lock:
             curr = self.root
             matched_len = 0
-            matched_nodes = []
-            
-            # Simple token/phrase level matching
             words = prompt.split(" ")
             matched_text = ""
             for i in range(1, len(words) + 1):
@@ -46,10 +44,9 @@ class RadixPrefixTree:
                     curr = curr.children[sub]
                     curr.hits += 1
                     matched_text = sub
-                    matched_nodes.append(curr.node_id)
             return matched_text, len(matched_text), curr
 
-    def insert_branch(self, prompt, response, tick=None):
+    def insert_branch(self, prompt, response, mode="chat", tick=None):
         with self.lock:
             if tick is None:
                 self.current_tick += 1
@@ -58,24 +55,28 @@ class RadixPrefixTree:
             self.node_counter += 1
             node_id = f"node_{self.node_counter}"
             
-            # Insert into Radix tree
             self.root.children[prompt] = RadixNode(node_id, prompt, tick=tick, parent=self.root)
             
             entry = {
                 "id": node_id,
                 "tick": tick,
+                "mode": mode,
                 "prompt": prompt,
                 "response": response,
                 "timestamp": time.strftime("%H:%M:%S")
             }
             self.history.append(entry)
+            if mode == "chat":
+                self.chat_history.append((prompt, response))
+                if len(self.chat_history) > 4:
+                    self.chat_history.pop(0)
             return entry
 
     def rollback(self, target_tick):
         with self.lock:
             self.history = [h for h in self.history if h["tick"] <= target_tick]
             self.current_tick = target_tick
-            # Rebuild tree from remaining history
+            self.chat_history = [(h["prompt"], h["response"]) for h in self.history if h["mode"] == "chat"]
             self.root.children = {}
             for h in self.history:
                 self.root.children[h["prompt"]] = RadixNode(h["id"], h["prompt"], tick=h["tick"], parent=self.root)
@@ -83,18 +84,41 @@ class RadixPrefixTree:
 
 radix_engine = RadixPrefixTree()
 
-# Pre-populate some canonical prefixes (System Invariants)
-radix_engine.insert_branch("System: You are an execution ledger tracking portfolio state.", "Initialized in RAM", tick=1)
+# =========================================================================
+# DSO CONVERSATIONAL & ALGEBRAIC TELEPROMPTER SIGNATURES
+# =========================================================================
+DSO_CHAT_PREFIX = """The following is a friendly, intelligent, and helpful conversation with an AI assistant named Puro.
+
+Human: Hello! Who are you?
+Puro: Hi! I am Puro, a lightweight AI running locally on your CPU with Cordis-SGLang. How can I help you today?
+
+Human: What is your favorite programming language?
+Puro: I really enjoy OCaml for its high speed, type safety, and clean algebraic data structures!
+"""
+
+def build_dso_prompt(user_input, mode="chat"):
+    if mode == "chat":
+        # Build conversational multi-turn with DSO few-shot alignment
+        history_str = ""
+        for h_user, h_bot in radix_engine.chat_history[-3:]:
+            history_str += f"\nHuman: {h_user}\nPuro: {h_bot}\n"
+        
+        full_prompt = f"{DSO_CHAT_PREFIX}{history_str}\nHuman: {user_input}\nPuro:"
+        return full_prompt, ["\nHuman:", "\n\nHuman:", "Human:", "\n\n\n", "User:"]
+    else:
+        # Algebraic Lens Mode
+        full_prompt = f"System: You are an execution ledger tracking portfolio state.\nUser: {user_input}\nState: "
+        return full_prompt, ["\n", "User:"]
 
 # =========================================================================
-# WEB UI DASHBOARD (Single Page Cyberpunk / Jane Street Pro)
+# WEB UI DASHBOARD
 # =========================================================================
 INDEX_HTML = """<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cordis-SGLang Studio // Puro-2B Socket Engine</title>
+  <title>Cordis-SGLang Studio // Puro-2B Conversational Engine</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -141,27 +165,35 @@ INDEX_HTML = """<!DOCTYPE html>
       <div>
         <h1 class="text-sm font-black tracking-tight text-white flex items-center gap-2">
           <span>CORDIS-SGLANG</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 mono">RADIX-ATTENTION</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 mono">DSO ALIGNED</span>
         </h1>
       </div>
     </div>
 
-    <!-- Telemetry Badges -->
+    <!-- Mode Selector & Telemetry -->
     <div class="flex items-center space-x-4">
+      
+      <!-- Mode Toggle -->
+      <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs mono">
+        <button id="mode-chat" onclick="setMode('chat')" class="px-3 py-1 rounded-lg bg-indigo-600 text-white font-bold transition-all flex items-center space-x-1">
+          <span>💬</span>
+          <span>DSO Chat</span>
+        </button>
+        <button id="mode-lens" onclick="setMode('lens')" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white transition-all flex items-center space-x-1">
+          <span>📐</span>
+          <span>Poly Lens</span>
+        </button>
+      </div>
+
       <div class="flex items-center space-x-2 text-xs mono bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span class="text-slate-400">Backend:</span>
+        <span class="text-slate-400">Model:</span>
         <span class="text-emerald-400 font-bold">Puro-2B-Base (CPU 6T)</span>
       </div>
 
       <div class="flex items-center space-x-2 text-xs mono bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
-        <span class="text-slate-400">Causal Clock:</span>
+        <span class="text-slate-400">Clock:</span>
         <span id="header-tick" class="text-indigo-400 font-bold">τ = 1</span>
-      </div>
-
-      <div class="flex items-center space-x-2 text-xs mono bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
-        <span class="text-slate-400">Radix Cache Hit:</span>
-        <span id="header-cache-rate" class="text-emerald-400 font-bold">100.0%</span>
       </div>
     </div>
   </header>
@@ -200,7 +232,7 @@ INDEX_HTML = """<!DOCTYPE html>
       </div>
     </div>
 
-    <!-- RIGHT PANEL: Live Socket Inference Terminal -->
+    <!-- RIGHT PANEL: Live Conversational Stream Terminal -->
     <div class="flex-1 bg-panel border border-slate-800 rounded-2xl p-4 flex flex-col justify-between overflow-hidden shadow-xl glow-indigo">
       <div class="flex flex-col flex-1 overflow-hidden">
         
@@ -208,7 +240,7 @@ INDEX_HTML = """<!DOCTYPE html>
         <div class="flex justify-between items-center pb-3 border-b border-slate-800">
           <div class="flex items-center space-x-2">
             <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
-            <span class="text-xs font-bold uppercase tracking-wider mono text-slate-200">⚡ Live Puro-2B Socket Stream</span>
+            <span id="term-title" class="text-xs font-bold uppercase tracking-wider mono text-slate-200">💬 Live Puro-2B Conversation</span>
           </div>
           <div class="flex items-center space-x-3 text-xs mono">
             <span class="text-slate-400">TTFT: <strong id="term-ttft" class="text-emerald-400">0 ms</strong></span>
@@ -219,27 +251,30 @@ INDEX_HTML = """<!DOCTYPE html>
 
         <!-- Terminal Output Stream -->
         <div id="terminal-box" class="flex-1 bg-slate-950 rounded-xl p-4 my-3 border border-slate-800/80 mono text-xs overflow-auto space-y-3 text-slate-300">
-          <div class="text-slate-500">// Cordis-SGLang Socket ready on port 8095. Type a prompt or select a quick action below...</div>
+          <div class="text-slate-500">// DSO Conversational alignment loaded. Say hello or ask Puro-2B anything!</div>
         </div>
 
         <!-- Quick Action Buttons -->
-        <div class="flex gap-2 mb-3">
-          <button onclick="fillPrompt('Add EUR=5000 to balance')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 mono transition-all">
-            + Deposit EUR (Prefix Reuse)
+        <div id="quick-buttons" class="flex flex-wrap gap-2 mb-3">
+          <button onclick="fillPrompt('Hello Puro! How are you doing today?')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 mono transition-all">
+            👋 Say Hello
           </button>
-          <button onclick="fillPrompt('Swap USD -> 310000 JPY at 155.0')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 mono transition-all">
-            💱 FX Swap (Prefix Reuse)
+          <button onclick="fillPrompt('Explain category theory in simple words.')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 mono transition-all">
+            📐 What is Category Theory?
           </button>
-          <button onclick="fillPrompt('CalcEquity()')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 mono transition-all">
-            📊 Calc Equity
+          <button onclick="fillPrompt('Why is OCaml faster than Python?')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 mono transition-all">
+            ⚡ Why OCaml > Python?
+          </button>
+          <button onclick="fillPrompt('Tell me an interesting science fact.')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 mono transition-all">
+            🔬 Science Fact
           </button>
         </div>
 
         <!-- Input Bar -->
         <form onsubmit="handleSend(event)" class="flex gap-2">
-          <input id="user-input" type="text" placeholder="Type prompt or algebraic delta to stream live with Puro-2B on CPU..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 mono">
+          <input id="user-input" type="text" placeholder="Type a message to chat with Puro-2B in natural conversational English..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 mono">
           <button id="send-btn" type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold mono shadow-lg shadow-indigo-600/30 transition-all flex items-center space-x-1.5">
-            <span>Send (Stream Live)</span>
+            <span>Send</span>
             <span>▶</span>
           </button>
         </form>
@@ -252,6 +287,46 @@ INDEX_HTML = """<!DOCTYPE html>
   <!-- LIVE SCRIPT -->
   <script>
     let isGenerating = false;
+    let currentMode = 'chat';
+
+    function setMode(m) {
+      currentMode = m;
+      if (m === 'chat') {
+        document.getElementById('mode-chat').className = 'px-3 py-1 rounded-lg bg-indigo-600 text-white font-bold transition-all flex items-center space-x-1';
+        document.getElementById('mode-lens').className = 'px-3 py-1 rounded-lg text-slate-400 hover:text-white transition-all flex items-center space-x-1';
+        document.getElementById('term-title').textContent = '💬 Live Puro-2B Conversation (DSO Aligned)';
+        document.getElementById('user-input').placeholder = 'Type a message to chat with Puro-2B in natural conversational English...';
+        
+        document.getElementById('quick-buttons').innerHTML = `
+          <button onclick="fillPrompt('Hello Puro! How are you doing today?')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 mono transition-all">
+            👋 Say Hello
+          </button>
+          <button onclick="fillPrompt('Explain category theory in simple words.')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 mono transition-all">
+            📐 What is Category Theory?
+          </button>
+          <button onclick="fillPrompt('Why is OCaml faster than Python?')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 mono transition-all">
+            ⚡ Why OCaml > Python?
+          </button>
+        `;
+      } else {
+        document.getElementById('mode-lens').className = 'px-3 py-1 rounded-lg bg-indigo-600 text-white font-bold transition-all flex items-center space-x-1';
+        document.getElementById('mode-chat').className = 'px-3 py-1 rounded-lg text-slate-400 hover:text-white transition-all flex items-center space-x-1';
+        document.getElementById('term-title').textContent = '📐 Poly Lens Delta Patching';
+        document.getElementById('user-input').placeholder = 'Type algebraic patch (e.g. Set USD=10000, Add EUR=5000)...';
+        
+        document.getElementById('quick-buttons').innerHTML = `
+          <button onclick="fillPrompt('Set USD=10000')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 mono transition-all">
+            + Init USD
+          </button>
+          <button onclick="fillPrompt('Add EUR=5000 to balance')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 mono transition-all">
+            + Deposit EUR
+          </button>
+          <button onclick="fillPrompt('Swap USD -> 310000 JPY at 155.0')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 mono transition-all">
+            💱 FX Swap
+          </button>
+        `;
+      }
+    }
 
     function fillPrompt(txt) {
       document.getElementById('user-input').value = txt;
@@ -271,16 +346,17 @@ INDEX_HTML = """<!DOCTYPE html>
       document.getElementById('rollback-tick-input').max = data.current_tick;
       
       el.innerHTML = '';
-      data.history.forEach((item, idx) => {
+      data.history.forEach((item) => {
         const div = document.createElement('div');
         div.className = 'bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 space-y-1';
+        const badgeColor = item.mode === 'chat' ? 'text-indigo-400' : 'text-emerald-400';
         div.innerHTML = `
           <div class="flex justify-between items-center text-[10px]">
-            <span class="text-indigo-400 font-bold">[τ=${item.tick}] ${item.id}</span>
+            <span class="${badgeColor} font-bold">[τ=${item.tick}] ${item.id} (${item.mode})</span>
             <span class="text-slate-500">${item.timestamp}</span>
           </div>
-          <div class="text-[11px] text-slate-300 truncate"><strong>P:</strong> "${item.prompt}"</div>
-          <div class="text-[11px] text-emerald-400 truncate"><strong>R:</strong> ${item.response}</div>
+          <div class="text-[11px] text-slate-300 truncate"><strong>You:</strong> "${item.prompt}"</div>
+          <div class="text-[11px] text-emerald-400 truncate"><strong>Puro:</strong> ${item.response}</div>
         `;
         el.appendChild(div);
       });
@@ -318,7 +394,7 @@ INDEX_HTML = """<!DOCTYPE html>
 
       input.value = '';
       isGenerating = true;
-      document.getElementById('send-btn').textContent = 'Computing... ⏳';
+      document.getElementById('send-btn').textContent = 'Thinking... ⏳';
 
       const term = document.getElementById('terminal-box');
       
@@ -327,7 +403,7 @@ INDEX_HTML = """<!DOCTYPE html>
       userBlock.className = 'bg-slate-900/90 p-3 rounded-xl border border-indigo-500/30 space-y-1';
       userBlock.innerHTML = `
         <div class="flex justify-between items-center text-[10px] text-slate-400">
-          <span class="text-indigo-400 font-bold">USER PROMPT</span>
+          <span class="text-indigo-400 font-bold">YOU</span>
           <span class="text-emerald-400 mono font-semibold">⚡ SGLang Radix Matched</span>
         </div>
         <div class="text-slate-100 text-xs font-semibold">${promptText}</div>
@@ -339,10 +415,10 @@ INDEX_HTML = """<!DOCTYPE html>
       modelBlock.className = 'bg-slate-900/90 p-3 rounded-xl border border-emerald-500/30 space-y-1';
       modelBlock.innerHTML = `
         <div class="flex justify-between items-center text-[10px] text-slate-400">
-          <span class="text-emerald-400 font-bold">PURO-2B STREAM</span>
+          <span class="text-emerald-400 font-bold">PURO-2B</span>
           <span id="active-ms" class="text-emerald-400 mono font-semibold">0.0 ms</span>
         </div>
-        <div id="active-output" class="text-emerald-300 text-xs font-mono font-bold"></div>
+        <div id="active-output" class="text-emerald-300 text-xs font-mono font-medium whitespace-pre-wrap"></div>
       `;
       term.appendChild(modelBlock);
       term.scrollTop = term.scrollHeight;
@@ -354,7 +430,7 @@ INDEX_HTML = """<!DOCTYPE html>
         const response = await fetch('/api/generate_stream', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: promptText })
+          body: JSON.stringify({ prompt: promptText, mode: currentMode })
         });
 
         const reader = response.body.getReader();
@@ -372,7 +448,7 @@ INDEX_HTML = """<!DOCTYPE html>
                 const data = JSON.parse(line.slice(6));
                 if (data.type === 'token') {
                   fullText += data.token;
-                  outEl.textContent = fullText;
+                  outEl.textContent = fullText.trimStart();
                   msEl.textContent = data.ms + ' ms';
                   document.getElementById('term-ttft').textContent = data.ttft + ' ms';
                   document.getElementById('term-tokens').textContent = data.tokens;
@@ -390,7 +466,7 @@ INDEX_HTML = """<!DOCTYPE html>
       }
 
       isGenerating = false;
-      document.getElementById('send-btn').textContent = 'Send (Stream Live) ▶';
+      document.getElementById('send-btn').textContent = 'Send ▶';
     }
 
     // Initial load
@@ -462,19 +538,26 @@ class SGLangCordisHandler(BaseHTTPRequestHandler):
             self.end_headers()
 
             user_prompt = req_data.get("prompt", "")
+            mode = req_data.get("mode", "chat")
             
-            # SGLang Radix Matching
-            matched_prefix, matched_len, node = radix_engine.get_longest_matching_prefix(user_prompt)
-            
-            full_prompt = f"System: You are an execution ledger tracking portfolio state.\nUser: {user_prompt}\nState: "
+            # SGLang Radix Matching & DSO Prompt Teleprompting
+            full_prompt, stop_tokens = build_dso_prompt(user_prompt, mode=mode)
             
             t0 = time.time()
             first_token_time = None
             token_count = 0
             full_output = ""
 
-            # Stream tokens live from Puro-2B
-            for chunk in llm(full_prompt, max_tokens=35, stop=["\n", "User:"], stream=True):
+            # Stream tokens live from Puro-2B with DSO repetition penalty
+            for chunk in llm(
+                full_prompt,
+                max_tokens=100 if mode == "chat" else 30,
+                stop=stop_tokens,
+                temperature=0.7 if mode == "chat" else 0.1,
+                top_p=0.9,
+                repeat_penalty=1.18,
+                stream=True
+            ):
                 if first_token_time is None:
                     first_token_time = time.time()
                 
@@ -498,7 +581,8 @@ class SGLangCordisHandler(BaseHTTPRequestHandler):
                 self.wfile.flush()
 
             # Record into Cordis Radix Tree
-            radix_engine.insert_branch(user_prompt, full_output.strip())
+            clean_resp = full_output.strip()
+            radix_engine.insert_branch(user_prompt, clean_resp, mode=mode)
             
             self.wfile.write(b"data: {\"type\":\"done\"}\n\n")
             self.wfile.flush()

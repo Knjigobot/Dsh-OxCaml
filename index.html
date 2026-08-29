@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang=en>
 <head>
   <meta charset=UTF-8>
@@ -35,26 +35,25 @@
       <div class=h-4 w-px bg-slate-700 mx-2></div>
       <span class=text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono flex items-center space-x-1>
         <span class=w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping></span>
-        <span>⚡ ZERO-PYTHON NATIVE SSE (PORT 8088)</span>
+        <span>⚡ ZERO-PYTHON NATIVE SSE (PORT 8090)</span>
       </span>
     </div>
 
     <!-- Mode Selector -->
-    <div class=flex items-center space-x-2>
-      <div class=flex space-x-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs font-mono>
-        <button id=tab-bench onclick=switchTab('bench') class=tab-btn px-3 py-1.5 rounded font-semibold bg-indigo-600 text-white>[1] Benchmark Engine</button>
-        <button id=tab-puro onclick=switchTab('puro') class=tab-btn px-3 py-1.5 rounded text-slate-400 hover:text-white>[2] Puro-2B Live Run</button>
-        <button id=tab-ast onclick=switchTab('ast') class=tab-btn px-3 py-1.5 rounded text-slate-400 hover:text-white>[3] In-Memory AST Lenses</button>
-        <button id=tab-dst onclick=switchTab('dst') class=tab-btn px-3 py-1.5 rounded text-slate-400 hover:text-white>[4] Spatiotemporal Chaos</button>
+      <div class="flex space-x-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs font-mono">
+        <button id="tab-puro" onclick="switchTab('puro')" class="tab-btn px-3 py-1.5 rounded font-semibold bg-indigo-600 text-white">[1] Puro-2B Live Run</button>
+        <button id="tab-bench" onclick="switchTab('bench')" class="tab-btn px-3 py-1.5 rounded text-slate-400 hover:text-white">[2] Benchmark Engine</button>
+        <button id="tab-ast" onclick="switchTab('ast')" class="tab-btn px-3 py-1.5 rounded text-slate-400 hover:text-white">[3] In-Memory AST Lenses</button>
+        <button id="tab-dst" onclick="switchTab('dst')" class="tab-btn px-3 py-1.5 rounded text-slate-400 hover:text-white">[4] Spatiotemporal Chaos</button>
       </div>
     </div>
   </header>
 
   <!-- MAIN WORKSPACE -->
-  <main class=flex-1 flex overflow-hidden p-4 gap-4>
+  <main class="flex-1 flex overflow-hidden p-4 gap-4">
 
     <!-- VIEW 1: EMPIRICAL BENCHMARK ENGINE -->
-    <section id=view-bench class=view-panel flex-1 flex flex-col gap-4>
+    <section id="view-bench" class="view-panel flex-1 hidden flex-col gap-4">
       <div class=grid grid-cols-3 gap-4 flex-shrink-0>
         <!-- Metric 1 -->
         <div class=bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between>
@@ -145,7 +144,7 @@
     </section>
 
     <!-- VIEW 2: PURO-2B LIVE HARDWARE TRACE -->
-    <section id=view-puro class=view-panel flex-1 hidden flex-col gap-4>
+    <section id="view-puro" class="view-panel flex-1 flex flex-col gap-4">
       <div class=bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col flex-1>
         <div class=flex justify-between items-center mb-4>
           <div>

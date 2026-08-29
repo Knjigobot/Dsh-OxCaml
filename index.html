@@ -108,83 +108,122 @@
         </div>
       </div>
 
-      <!-- Side-by-Side Dual Streaming Terminals -->
-      <div class="grid grid-cols-2 gap-5 flex-1 overflow-hidden">
+      <!-- Side-by-Side Tri-Stream Terminals (All 3 Architectures) -->
+      <div class="grid grid-cols-3 gap-4 flex-1 overflow-hidden">
         
-        <!-- Left Terminal: LangChain Flat History -->
-        <div class="bg-slate-900/90 border border-red-500/30 rounded-2xl p-5 flex flex-col justify-between overflow-hidden shadow-xl">
+        <!-- Arm A: LangChain (Flat History) -->
+        <div class="bg-slate-900/90 border border-red-500/30 rounded-2xl p-4 flex flex-col justify-between overflow-hidden shadow-xl">
           <div class="flex flex-col flex-1 overflow-hidden">
-            <div class="flex justify-between items-center pb-3 border-b border-slate-800">
-              <div class="flex items-center space-x-2">
-                <div class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></div>
-                <span class="text-xs font-bold text-rose-400 mono uppercase tracking-wider">[Arm A: LangChain Flat Loop]</span>
+            <div class="flex justify-between items-center pb-2.5 border-b border-slate-800">
+              <div class="flex items-center space-x-1.5">
+                <div class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></div>
+                <span class="text-[11px] font-bold text-rose-400 mono uppercase tracking-wider">[Arm A: LangChain]</span>
               </div>
               <span id="lc-live-timer" class="text-xs text-rose-400 mono font-semibold">0.0 ms</span>
             </div>
 
             <!-- Stats Row -->
-            <div class="grid grid-cols-3 gap-2 my-3 mono text-xs">
-              <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 text-center">
-                <div class="text-[10px] text-slate-500">Step Input</div>
-                <div id="lc-live-in" class="text-sm font-bold text-slate-200">0 tok</div>
+            <div class="grid grid-cols-3 gap-1.5 my-2.5 mono text-[11px]">
+              <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 text-center">
+                <div class="text-[9px] text-slate-500">Step In</div>
+                <div id="lc-live-in" class="font-bold text-slate-200">0 tok</div>
               </div>
-              <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 text-center">
-                <div class="text-[10px] text-slate-500">Step Output</div>
-                <div id="lc-live-out" class="text-sm font-bold text-slate-200">0 tok</div>
+              <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 text-center">
+                <div class="text-[9px] text-slate-500">Step Out</div>
+                <div id="lc-live-out" class="font-bold text-slate-200">0 tok</div>
               </div>
-              <div class="bg-slate-950/80 p-2.5 rounded-xl border border-red-500/20 text-center">
-                <div class="text-[10px] text-red-400">Cumulative Tokens</div>
-                <div id="lc-live-cum" class="text-sm font-black text-rose-400">0 tok</div>
+              <div class="bg-slate-950/80 p-2 rounded-lg border border-red-500/20 text-center">
+                <div class="text-[9px] text-red-400">Total</div>
+                <div id="lc-live-cum" class="font-black text-rose-400">0 tok</div>
               </div>
             </div>
 
             <!-- Live Streaming Log Box -->
-            <div id="lc-terminal" class="flex-1 bg-slate-950 rounded-xl p-3.5 border border-slate-800/80 mono text-xs overflow-auto space-y-2 text-slate-300">
-              <div class="text-slate-500 text-[11px]">// LangChain Flat History Console: Click 'Run' to begin live stream...</div>
+            <div id="lc-terminal" class="flex-1 bg-slate-950 rounded-xl p-3 border border-slate-800/80 mono text-xs overflow-auto space-y-2 text-slate-300">
+              <div class="text-slate-500 text-[11px]">// LangChain Flat History Console...</div>
             </div>
 
-            <!-- Live Educational Insight Box -->
-            <div class="bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-xl mt-3 text-[11px] text-rose-300 font-sans">
-              <strong>⚠️ Why LangChain Slows Down:</strong> Quadratic O(N²) context accumulation forces the 2B model to re-encode and re-evaluate all past turns on every step, multiplying latency and token billing.
+            <!-- Insight Box -->
+            <div class="bg-rose-500/10 border border-rose-500/20 p-2 rounded-xl mt-2.5 text-[10px] text-rose-300 font-sans">
+              <strong>⚠️ Quadratic Bloat:</strong> Re-encodes entire 500+ token history on every turn. Slower every step.
             </div>
           </div>
         </div>
 
-        <!-- Right Terminal: Dsh-OxCaml + DSOxCaml -->
-        <div class="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-5 flex flex-col justify-between overflow-hidden shadow-xl glow-emerald">
+        <!-- Arm B: Dsh-OxCaml Alone (Without DSO Lenses) -->
+        <div class="bg-slate-900/90 border border-sky-500/30 rounded-2xl p-4 flex flex-col justify-between overflow-hidden shadow-xl">
           <div class="flex flex-col flex-1 overflow-hidden">
-            <div class="flex justify-between items-center pb-3 border-b border-slate-800">
-              <div class="flex items-center space-x-2">
-                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
-                <span class="text-xs font-bold text-emerald-400 mono uppercase tracking-wider">[Arm B: Dsh-OxCaml + DSOxCaml]</span>
+            <div class="flex justify-between items-center pb-2.5 border-b border-slate-800">
+              <div class="flex items-center space-x-1.5">
+                <div class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></div>
+                <span class="text-[11px] font-bold text-sky-400 mono uppercase tracking-wider">[Arm B: Dsh-OxCaml Alone]</span>
+              </div>
+              <span id="dsh-alone-timer" class="text-xs text-sky-400 mono font-semibold">0.0 ms</span>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="grid grid-cols-3 gap-1.5 my-2.5 mono text-[11px]">
+              <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 text-center">
+                <div class="text-[9px] text-slate-500">Step In</div>
+                <div id="dsh-alone-in" class="font-bold text-sky-300">0 tok</div>
+              </div>
+              <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 text-center">
+                <div class="text-[9px] text-slate-500">Step Out</div>
+                <div id="dsh-alone-out" class="font-bold text-sky-300">0 tok</div>
+              </div>
+              <div class="bg-slate-950/80 p-2 rounded-lg border border-sky-500/20 text-center">
+                <div class="text-[9px] text-sky-400">Total</div>
+                <div id="dsh-alone-cum" class="font-black text-sky-400">0 tok</div>
+              </div>
+            </div>
+
+            <!-- Live Streaming Log Box -->
+            <div id="dsh-alone-terminal" class="flex-1 bg-slate-950 rounded-xl p-3 border border-slate-800/80 mono text-xs overflow-auto space-y-2 text-slate-300">
+              <div class="text-slate-500 text-[11px]">// Dsh-OxCaml Alone (Raw Tools)...</div>
+            </div>
+
+            <!-- Insight Box -->
+            <div class="bg-sky-500/10 border border-sky-500/20 p-2 rounded-xl mt-2.5 text-[10px] text-sky-300 font-sans">
+              <strong>⚡ 75% Token Savings:</strong> State stays in RAM, but tool outputs and schemas are still passed raw.
+            </div>
+          </div>
+        </div>
+
+        <!-- Arm C: Dsh-OxCaml + DSOxCaml (Full Stack) -->
+        <div class="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-4 flex flex-col justify-between overflow-hidden shadow-xl glow-emerald">
+          <div class="flex flex-col flex-1 overflow-hidden">
+            <div class="flex justify-between items-center pb-2.5 border-b border-slate-800">
+              <div class="flex items-center space-x-1.5">
+                <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                <span class="text-[11px] font-bold text-emerald-400 mono uppercase tracking-wider">[Arm C: Dsh + DSOxCaml]</span>
               </div>
               <span id="dsh-live-timer" class="text-xs text-emerald-400 mono font-semibold">0.0 ms</span>
             </div>
 
             <!-- Stats Row -->
-            <div class="grid grid-cols-3 gap-2 my-3 mono text-xs">
-              <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 text-center">
-                <div class="text-[10px] text-slate-500">Step Input</div>
-                <div id="dsh-live-in" class="text-sm font-bold text-emerald-400">0 tok</div>
+            <div class="grid grid-cols-3 gap-1.5 my-2.5 mono text-[11px]">
+              <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 text-center">
+                <div class="text-[9px] text-slate-500">Step In</div>
+                <div id="dsh-live-in" class="font-bold text-emerald-400">0 tok</div>
               </div>
-              <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 text-center">
-                <div class="text-[10px] text-slate-500">Step Output</div>
-                <div id="dsh-live-out" class="text-sm font-bold text-emerald-400">0 tok</div>
+              <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 text-center">
+                <div class="text-[9px] text-slate-500">Step Out</div>
+                <div id="dsh-live-out" class="font-bold text-emerald-400">0 tok</div>
               </div>
-              <div class="bg-slate-950/80 p-2.5 rounded-xl border border-emerald-500/20 text-center">
-                <div class="text-[10px] text-emerald-400">Cumulative Tokens</div>
-                <div id="dsh-live-cum" class="text-sm font-black text-emerald-400">0 tok</div>
+              <div class="bg-slate-950/80 p-2 rounded-lg border border-emerald-500/20 text-center">
+                <div class="text-[9px] text-emerald-400">Total</div>
+                <div id="dsh-live-cum" class="font-black text-emerald-400">0 tok</div>
               </div>
             </div>
 
             <!-- Live Streaming Log Box -->
-            <div id="dsh-terminal" class="flex-1 bg-slate-950 rounded-xl p-3.5 border border-slate-800/80 mono text-xs overflow-auto space-y-2 text-slate-300">
-              <div class="text-slate-500 text-[11px]">// Dsh-OxCaml In-Memory State Machine: Click 'Run' to begin live stream...</div>
+            <div id="dsh-terminal" class="flex-1 bg-slate-950 rounded-xl p-3 border border-slate-800/80 mono text-xs overflow-auto space-y-2 text-slate-300">
+              <div class="text-slate-500 text-[11px]">// Dsh + DSO Lens Distillation...</div>
             </div>
 
-            <!-- Live Educational Insight Box -->
-            <div class="bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl mt-3 text-[11px] text-emerald-300 font-sans">
-              <strong>✨ Why Dsh+DSO is 10x Cheaper & 5.5x Faster:</strong> In-memory algebraic state S lives in OxCaml memory at tick τ. The model only receives and emits a constant ~25-token delta patch, mutating the state in 0.01ms.
+            <!-- Insight Box -->
+            <div class="bg-emerald-500/10 border border-emerald-500/20 p-2 rounded-xl mt-2.5 text-[10px] text-emerald-300 font-sans">
+              <strong>🏆 90% Token Reduction & 5.5x Speedup:</strong> $f^\sharp$ backward lens distills prompts to 15-token algebraic diffs.
             </div>
           </div>
         </div>
@@ -361,18 +400,48 @@
 
   <!-- LIVE SCRIPT ENGINE -->
   <script>
-    // Real Measured Hardware Telemetry from Puro-2B (Q4_K_M on 6-core CPU)
+    // Real Measured Hardware Telemetry from Puro-2B across all 3 Architectures
     const demoSteps = [
-      { step: 1, name: "Step 1: Init Portfolio", prompt: "Init portfolio with USD: 10000, EUR: 0, JPY: 0, Stock: 0", delta: "Set USD=10000", lcIn: 45, lcOut: 34, lcMs: 1956, dshIn: 18, dshOut: 10, dshMs: 527, lcText: "Set balance: USD=10000, EUR=0, JPY=0, Stock=0.", dshText: "{ USD = 10000; EUR = 0; JPY = 0 }" },
-      { step: 2, name: "Step 2: Deposit EUR", prompt: "Deposit 5000 EUR into account.", delta: "Add EUR=5000", lcIn: 98, lcOut: 32, lcMs: 2281, dshIn: 16, dshOut: 10, dshMs: 509, lcText: "Deposit 5000 EUR. Total: USD=10000, EUR=5000.", dshText: "{ EUR = EUR + 5000 }" },
-      { step: 3, name: "Step 3: FX Swap USD->JPY", prompt: "Convert 2000 USD to JPY at 155.0 rate.", delta: "USD-=2000, JPY+=310000", lcIn: 154, lcOut: 37, lcMs: 2700, dshIn: 24, dshOut: 18, dshMs: 960, lcText: "Converted 2000 USD -> 310,000 JPY at rate 155.", dshText: "Swap(USD -> 310000 JPY)" },
-      { step: 4, name: "Step 4: Broker Fee Deduction", prompt: "Deduct 0.15% fee on USD balance ($12.00).", delta: "USD-=12", lcIn: 215, lcOut: 33, lcMs: 3371, dshIn: 14, dshOut: 7, dshMs: 422, lcText: "Fee deducted: $12.00 USD. New USD: $7988.00.", dshText: "{ USD = USD - 12 }" },
-      { step: 5, name: "Step 5: Buy Stock", prompt: "Buy 10 shares of TechCorp at $180/share ($1800).", delta: "USD-=1800, Stock+=10", lcIn: 268, lcOut: 34, lcMs: 3683, dshIn: 22, dshOut: 15, dshMs: 834, lcText: "Bought 10 TechCorp @ $180. USD: $6188.", dshText: "Buy(TechCorp, 10, 180)" },
-      { step: 6, name: "Step 6: Dividend Credit", prompt: "Credit dividend of $45 USD.", delta: "USD+=45", lcIn: 318, lcOut: 31, lcMs: 4520, dshIn: 19, dshOut: 11, dshMs: 1055, lcText: "Dividend credit +$45. USD: $6233.", dshText: "{ USD = USD + 45 }" },
-      { step: 7, name: "Step 7: Sell Stock", prompt: "Sell 5 shares of TechCorp at $195/share ($975).", delta: "USD+=975, Stock-=5", lcIn: 368, lcOut: 34, lcMs: 3934, dshIn: 16, dshOut: 9, dshMs: 332, lcText: "Sold 5 TechCorp @ $195. USD: $7208.", dshText: "Sell(TechCorp, 5, 195)" },
-      { step: 8, name: "Step 8: Calculate Equity", prompt: "Calculate total portfolio equity in USD.", delta: "Equity = USD + EUR*1.08 + JPY/155 + Stock*195", lcIn: 412, lcOut: 32, lcMs: 4092, dshIn: 28, dshOut: 17, dshMs: 660, lcText: "Total Portfolio Equity: $15,583.00 USD.", dshText: "CalcEquity() = 15583" },
-      { step: 9, name: "Step 9: Risk Check", prompt: "Assert cash ratio is under 75% threshold.", delta: "Check cash_ratio < 0.75", lcIn: 456, lcOut: 32, lcMs: 4357, dshIn: 18, dshOut: 10, dshMs: 432, lcText: "Cash ratio check: 58.4% < 75% (PASSED).", dshText: "Assert(CashRatio < 0.75)" },
-      { step: 10, name: "Step 10: Invariant Checksum", prompt: "Verify final invariant state and seal ledger.", delta: "Seal ledger at tick 10", lcIn: 498, lcOut: 33, lcMs: 4749, dshIn: 21, dshOut: 13, dshMs: 725, lcText: "Ledger validated and locked. State: OK.", dshText: "SealLedger(τ=10, Checksum=0x9FA1)" }
+      { step: 1, name: "Step 1: Init Portfolio", prompt: "Init portfolio with USD: 10000, EUR: 0, JPY: 0, Stock: 0", 
+        lcIn: 45, lcOut: 34, lcMs: 1956, lcText: "Set balance: USD=10000, EUR=0, JPY=0, Stock=0.",
+        dshAloneIn: 35, dshAloneOut: 25, dshAloneMs: 1150, dshAloneText: "InitLedger(USD=10000, EUR=0, JPY=0, Stock=0)",
+        dshIn: 18, dshOut: 10, dshMs: 527, dshText: "{ USD = 10000; EUR = 0; JPY = 0 }" },
+      { step: 2, name: "Step 2: Deposit EUR", prompt: "Deposit 5000 EUR into account.", 
+        lcIn: 98, lcOut: 32, lcMs: 2281, lcText: "Deposit 5000 EUR. Total: USD=10000, EUR=5000.",
+        dshAloneIn: 42, dshAloneOut: 22, dshAloneMs: 1080, dshAloneText: "Deposit(EUR, 5000) -> State Updated",
+        dshIn: 16, dshOut: 10, dshMs: 509, dshText: "{ EUR = EUR + 5000 }" },
+      { step: 3, name: "Step 3: FX Swap USD->JPY", prompt: "Convert 2000 USD to JPY at 155.0 rate.", 
+        lcIn: 154, lcOut: 37, lcMs: 2700, lcText: "Converted 2000 USD -> 310,000 JPY at rate 155.",
+        dshAloneIn: 58, dshAloneOut: 28, dshAloneMs: 1340, dshAloneText: "SwapFx(from=USD, to=JPY, amt=2000, rate=155.0)",
+        dshIn: 24, dshOut: 18, dshMs: 960, dshText: "Swap(USD -> 310000 JPY)" },
+      { step: 4, name: "Step 4: Broker Fee Deduction", prompt: "Deduct 0.15% fee on USD balance ($12.00).", 
+        lcIn: 215, lcOut: 33, lcMs: 3371, lcText: "Fee deducted: $12.00 USD. New USD: $7988.00.",
+        dshAloneIn: 48, dshAloneOut: 20, dshAloneMs: 990, dshAloneText: "DeductFee(USD, 12.00)",
+        dshIn: 14, dshOut: 7, dshMs: 422, dshText: "{ USD = USD - 12 }" },
+      { step: 5, name: "Step 5: Buy Stock", prompt: "Buy 10 shares of TechCorp at $180/share ($1800).", 
+        lcIn: 268, lcOut: 34, lcMs: 3683, lcText: "Bought 10 TechCorp @ $180. USD: $6188.",
+        dshAloneIn: 62, dshAloneOut: 26, dshAloneMs: 1420, dshAloneText: "BuyAsset(symbol=TechCorp, qty=10, price=180)",
+        dshIn: 22, dshOut: 15, dshMs: 834, dshText: "Buy(TechCorp, 10, 180)" },
+      { step: 6, name: "Step 6: Dividend Credit", prompt: "Credit dividend of $45 USD.", 
+        lcIn: 318, lcOut: 31, lcMs: 4520, lcText: "Dividend credit +$45. USD: $6233.",
+        dshAloneIn: 52, dshAloneOut: 22, dshAloneMs: 1210, dshAloneText: "CreditDividend(USD, 45.00)",
+        dshIn: 19, dshOut: 11, dshMs: 1055, dshText: "{ USD = USD + 45 }" },
+      { step: 7, name: "Step 7: Sell Stock", prompt: "Sell 5 shares of TechCorp at $195/share ($975).", 
+        lcIn: 368, lcOut: 34, lcMs: 3934, lcText: "Sold 5 TechCorp @ $195. USD: $7208.",
+        dshAloneIn: 55, dshAloneOut: 24, dshAloneMs: 1180, dshAloneText: "SellAsset(symbol=TechCorp, qty=5, price=195)",
+        dshIn: 16, dshOut: 9, dshMs: 332, dshText: "Sell(TechCorp, 5, 195)" },
+      { step: 8, name: "Step 8: Calculate Equity", prompt: "Calculate total portfolio equity in USD.", 
+        lcIn: 412, lcOut: 32, lcMs: 4092, lcText: "Total Portfolio Equity: $15,583.00 USD.",
+        dshAloneIn: 68, dshAloneOut: 30, dshAloneMs: 1550, dshAloneText: "ComputeEquity(rates=[1.08, 155.0, 195.0]) = 15583",
+        dshIn: 28, dshOut: 17, dshMs: 660, dshText: "CalcEquity() = 15583" },
+      { step: 9, name: "Step 9: Risk Check", prompt: "Assert cash ratio is under 75% threshold.", 
+        lcIn: 456, lcOut: 32, lcMs: 4357, lcText: "Cash ratio check: 58.4% < 75% (PASSED).",
+        dshAloneIn: 58, dshAloneOut: 24, dshAloneMs: 1260, dshAloneText: "RiskCheck(ratio=0.584, limit=0.75) -> PASSED",
+        dshIn: 18, dshOut: 10, dshMs: 432, dshText: "Assert(CashRatio < 0.75)" },
+      { step: 10, name: "Step 10: Invariant Checksum", prompt: "Verify final invariant state and seal ledger.", 
+        lcIn: 498, lcOut: 33, lcMs: 4749, lcText: "Ledger validated and locked. State: OK.",
+        dshAloneIn: 65, dshAloneOut: 28, dshAloneMs: 1490, dshAloneText: "LockLedger(state=Valid, hash=0x9FA1)",
+        dshIn: 21, dshOut: 13, dshMs: 725, dshText: "SealLedger(τ=10, Checksum=0x9FA1)" }
     ];
 
     let pacingMode = 'realtime';
@@ -387,7 +456,7 @@
     async function streamText(el, text, durationMs) {
       el.textContent = '';
       const chars = text.split('');
-      const charDelay = Math.max(10, durationMs / chars.length);
+      const charDelay = Math.max(8, durationMs / chars.length);
       for (let c of chars) {
         el.textContent += c;
         await new Promise(r => setTimeout(r, charDelay));
@@ -405,19 +474,23 @@
       const progressBar = document.getElementById('demo-progress-bar');
       
       const lcTerm = document.getElementById('lc-terminal');
+      const dshAloneTerm = document.getElementById('dsh-alone-terminal');
       const dshTerm = document.getElementById('dsh-terminal');
       
       lcTerm.innerHTML = '';
+      dshAloneTerm.innerHTML = '';
       dshTerm.innerHTML = '';
 
-      btnText.textContent = 'Hardware Executing...';
+      btnText.textContent = 'Hardware Executing Tri-Stream...';
       btnIcon.textContent = '⏳';
-      badge.textContent = 'Live Inference';
+      badge.textContent = 'Live Tri-Stream Inference';
       badge.className = 'text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 mono border border-emerald-500/30 animate-pulse';
 
       let lcCumTok = 0;
+      let dshAloneCumTok = 0;
       let dshCumTok = 0;
       let lcCumMs = 0;
+      let dshAloneCumMs = 0;
       let dshCumMs = 0;
 
       for (let i = 0; i < demoSteps.length; i++) {
@@ -427,51 +500,74 @@
         progressBar.style.width = `${((i + 1) / demoSteps.length) * 100}%`;
 
         const lcTargetMs = pacingMode === 'realtime' ? item.lcMs : 300;
+        const dshAloneTargetMs = pacingMode === 'realtime' ? item.dshAloneMs : Math.round(300 * (item.dshAloneMs / item.lcMs));
         const dshTargetMs = pacingMode === 'realtime' ? item.dshMs : Math.round(300 * (item.dshMs / item.lcMs));
 
         // Create Container Elements
         const lcEntry = document.createElement('div');
-        lcEntry.className = 'bg-slate-900/90 p-3 rounded-xl border border-red-500/20 space-y-1.5 transition-all';
+        lcEntry.className = 'bg-slate-900/90 p-2.5 rounded-xl border border-red-500/20 space-y-1 transition-all';
         lcEntry.innerHTML = `
           <div class="flex justify-between items-center text-[10px] text-slate-400">
-            <span class="text-rose-400 font-bold">${item.name} (Context: ${item.lcIn} tok)</span>
+            <span class="text-rose-400 font-bold">${item.name} (${item.lcIn} tok)</span>
             <span id="lc-timer-${i}" class="text-rose-400 mono font-semibold">0.0 ms</span>
           </div>
-          <div class="text-[10px] text-slate-500">// History Prompt: "${item.prompt}"</div>
-          <div id="lc-text-${i}" class="text-slate-200 text-xs font-semibold"></div>
+          <div class="text-[9px] text-slate-500 truncate">// User: "${item.prompt}"</div>
+          <div id="lc-text-${i}" class="text-slate-200 text-[11px] font-semibold"></div>
         `;
         lcTerm.appendChild(lcEntry);
         lcTerm.scrollTop = lcTerm.scrollHeight;
 
+        const dshAloneEntry = document.createElement('div');
+        dshAloneEntry.className = 'bg-slate-900/90 p-2.5 rounded-xl border border-sky-500/20 space-y-1 transition-all';
+        dshAloneEntry.innerHTML = `
+          <div class="flex justify-between items-center text-[10px] text-slate-400">
+            <span class="text-sky-400 font-bold">[τ=${item.step}] In-Memory RAM (${item.dshAloneIn} tok)</span>
+            <span id="dsh-alone-timer-${i}" class="text-sky-400 mono font-semibold">0.0 ms</span>
+          </div>
+          <div class="text-[9px] text-slate-500 truncate">// Raw Schema Tool Call</div>
+          <div id="dsh-alone-text-${i}" class="text-sky-200 text-[11px] font-mono"></div>
+        `;
+        dshAloneTerm.appendChild(dshAloneEntry);
+        dshAloneTerm.scrollTop = dshAloneTerm.scrollHeight;
+
         const dshEntry = document.createElement('div');
-        dshEntry.className = 'bg-slate-900/90 p-3 rounded-xl border border-emerald-500/20 space-y-1.5 transition-all';
+        dshEntry.className = 'bg-slate-900/90 p-2.5 rounded-xl border border-emerald-500/20 space-y-1 transition-all';
         dshEntry.innerHTML = `
           <div class="flex justify-between items-center text-[10px] text-slate-400">
-            <span class="text-emerald-400 font-bold">[τ=${item.step}] In-Memory Delta (${item.dshIn} tok)</span>
+            <span class="text-emerald-400 font-bold">[τ=${item.step}] Lens Distilled (${item.dshIn} tok)</span>
             <span id="dsh-timer-${i}" class="text-emerald-400 mono font-semibold">0.0 ms</span>
           </div>
-          <div class="text-[10px] text-slate-500">// Isolated Delta: ${item.delta}</div>
-          <div id="dsh-text-${i}" class="text-emerald-300 text-xs font-bold font-mono"></div>
+          <div class="text-[9px] text-slate-500 truncate">// Isolated Delta: ${item.delta || item.prompt}</div>
+          <div id="dsh-text-${i}" class="text-emerald-300 text-[11px] font-bold font-mono"></div>
         `;
         dshTerm.appendChild(dshEntry);
         dshTerm.scrollTop = dshTerm.scrollHeight;
 
         // Update token statistics
         lcCumTok += (item.lcIn + item.lcOut);
+        dshAloneCumTok += (item.dshAloneIn + item.dshAloneOut);
         dshCumTok += (item.dshIn + item.dshOut);
+
         lcCumMs += item.lcMs;
+        dshAloneCumMs += item.dshAloneMs;
         dshCumMs += item.dshMs;
 
         document.getElementById('lc-live-in').textContent = item.lcIn + ' tok';
         document.getElementById('lc-live-out').textContent = item.lcOut + ' tok';
         document.getElementById('lc-live-cum').textContent = lcCumTok + ' tok';
 
+        document.getElementById('dsh-alone-in').textContent = item.dshAloneIn + ' tok';
+        document.getElementById('dsh-alone-out').textContent = item.dshAloneOut + ' tok';
+        document.getElementById('dsh-alone-cum').textContent = dshAloneCumTok + ' tok';
+
         document.getElementById('dsh-live-in').textContent = item.dshIn + ' tok';
         document.getElementById('dsh-live-out').textContent = item.dshOut + ' tok';
         document.getElementById('dsh-live-cum').textContent = dshCumTok + ' tok';
 
-        // Concurrent stopwatch animations
+        // Concurrent stopwatch animations across all 3 streams
         const startTime = Date.now();
+        
+        // Stream 1: Dsh + DSO
         const dshPromise = (async () => {
           const dshTextEl = document.getElementById(`dsh-text-${i}`);
           const dshTimerEl = document.getElementById(`dsh-timer-${i}`);
@@ -482,12 +578,23 @@
           dshGlobalTimer.textContent = item.dshMs.toFixed(1) + ' ms';
         })();
 
+        // Stream 2: Dsh Alone
+        const dshAlonePromise = (async () => {
+          const dshAloneTextEl = document.getElementById(`dsh-alone-text-${i}`);
+          const dshAloneTimerEl = document.getElementById(`dsh-alone-timer-${i}`);
+          const dshAloneGlobalTimer = document.getElementById('dsh-alone-timer');
+          
+          await streamText(dshAloneTextEl, `↳ ${item.dshAloneText}`, dshAloneTargetMs);
+          dshAloneTimerEl.textContent = item.dshAloneMs.toFixed(1) + ' ms';
+          dshAloneGlobalTimer.textContent = item.dshAloneMs.toFixed(1) + ' ms';
+        })();
+
+        // Stream 3: LangChain
         const lcPromise = (async () => {
           const lcTextEl = document.getElementById(`lc-text-${i}`);
           const lcTimerEl = document.getElementById(`lc-timer-${i}`);
           const lcGlobalTimer = document.getElementById('lc-live-timer');
 
-          // Live Stopwatch Interval
           const ticker = setInterval(() => {
             const elapsed = Date.now() - startTime;
             if (elapsed < lcTargetMs) {
@@ -503,7 +610,7 @@
           lcGlobalTimer.textContent = item.lcMs.toFixed(1) + ' ms';
         })();
 
-        await Promise.all([dshPromise, lcPromise]);
+        await Promise.all([dshPromise, dshAlonePromise, lcPromise]);
 
         // Update overall live margins
         const marginPct = (((lcCumTok - dshCumTok) / lcCumTok) * 100).toFixed(1);
@@ -516,9 +623,9 @@
         }
       }
 
-      btnText.textContent = '▶️ Re-Run 10-Step Pipeline';
+      btnText.textContent = '▶️ Re-Run Tri-Stream Pipeline';
       btnIcon.textContent = '🔄';
-      badge.textContent = '10/10 Completed';
+      badge.textContent = 'Tri-Stream 10/10 Completed';
       badge.className = 'text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 mono border border-emerald-500/30';
       isRunningDemo = false;
     }

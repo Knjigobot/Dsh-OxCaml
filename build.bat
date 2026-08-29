@@ -11,7 +11,14 @@ if %ERRORLEVEL% EQU 0 (
     echo [*] Running Dsh-OxCaml test suite...
     dune runtest
 ) else (
-    echo [*] Dune toolchain not in PATH.
-    echo [*] Install via: opam install dune ocaml
+    echo [!] Dune toolchain is not currently in PATH.
+    echo.
+    echo [*] To install Dune ^& OCaml on Windows:
+    echo     Option 1 (Winget): winget install ocaml.opam
+    echo     Option 2 (DKML):   https://diskuv.com/dkml/installer/
+    echo     Option 3 (WSL):    wsl -- sudo apt install ocaml dune
+    echo.
+    echo [*] You can also launch the Dsh-OxCaml Web Studio directly via RUN.bat!
+    echo.
 )
 pause

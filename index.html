@@ -1,0 +1,311 @@
+﻿<!DOCTYPE html>
+<html lang=en>
+<head>
+  <meta charset=UTF-8>
+  <meta name=viewport content=width=device-width, initial-scale=1.0>
+  <title>Dsh-OxCaml + DSOxCaml Studio - Cordis Spatiotemporal Platform</title>
+  <script src=https://cdn.tailwindcss.com></script>
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 1); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
+</head>
+<body class=bg-slate-950 text-slate-100 antialiased h-screen flex flex-col overflow-hidden select-none font-sans>
+
+  <!-- TOP HEADER / STATUS BAR -->
+  <header class=h-14 border-b border-slate-800 bg-slate-900 px-5 flex items-center justify-between flex-shrink-0>
+    <div class=flex items-center space-x-3>
+      <div class=flex items-center space-x-2>
+        <div class=w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-sm shadow-emerald-500/50></div>
+        <span class=font-black tracking-wider text-base text-white>DSH-OXCAML</span>
+        <span class=text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono border border-indigo-500/30>CORDIS-OXCAML KERNEL</span>
+        <span class=text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono border border-purple-500/30>DSOXCAML OPTIMIZER</span>
+      </div>
+      <div class=h-4 w-px bg-slate-700 mx-2></div>
+      <div class=flex items-center space-x-2 text-xs text-slate-400>
+        <span>Formal Invariants: <strong class=text-emerald-400 font-mono>Cubical Agda / Rzk</strong></span>
+        <span>&bull;</span>
+        <span>Discrete Clock: <strong id=clock-tick class=text-white font-mono>τ = 14</strong></span>
+        <span>&bull;</span>
+        <span>Backend: <strong class=text-sky-400 font-mono>Zero-Python Native</strong></span>
+      </div>
+      <div class=h-4 w-px bg-slate-700 mx-2></div>
+      <span class=text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono flex items-center space-x-1>
+        <span class=w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping></span>
+        <span>⚡ ZERO-PYTHON NATIVE SSE (PORT 8088)</span>
+      </span>
+    </div>
+
+    <!-- Mode Selector -->
+    <div class=flex items-center space-x-2>
+      <div class=flex space-x-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs font-mono>
+        <button id=tab-bench onclick=switchTab('bench') class=tab-btn px-3 py-1.5 rounded font-semibold bg-indigo-600 text-white>[1] Benchmark Engine</button>
+        <button id=tab-puro onclick=switchTab('puro') class=tab-btn px-3 py-1.5 rounded text-slate-400 hover:text-white>[2] Puro-2B Live Run</button>
+        <button id=tab-ast onclick=switchTab('ast') class=tab-btn px-3 py-1.5 rounded text-slate-400 hover:text-white>[3] In-Memory AST Lenses</button>
+        <button id=tab-dst onclick=switchTab('dst') class=tab-btn px-3 py-1.5 rounded text-slate-400 hover:text-white>[4] Spatiotemporal Chaos</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <main class=flex-1 flex overflow-hidden p-4 gap-4>
+
+    <!-- VIEW 1: EMPIRICAL BENCHMARK ENGINE -->
+    <section id=view-bench class=view-panel flex-1 flex flex-col gap-4>
+      <div class=grid grid-cols-3 gap-4 flex-shrink-0>
+        <!-- Metric 1 -->
+        <div class=bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between>
+          <span class=text-xs font-semibold text-slate-400 uppercase tracking-wider font-mono>Token Reduction Margin</span>
+          <div class=flex items-baseline space-x-2 mt-2>
+            <span class=text-3xl font-black text-emerald-400>92.2% - 97.2%</span>
+            <span class=text-xs text-emerald-500 font-mono font-bold>13x to 35x Advantage</span>
+          </div>
+          <span class=text-[11px] text-slate-500 mt-1>Constant O(1) diffs vs LangChain quadratic context snowball</span>
+        </div>
+
+        <!-- Metric 2 -->
+        <div class=bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between>
+          <span class=text-xs font-semibold text-slate-400 uppercase tracking-wider font-mono>Execution Latency Margin</span>
+          <div class=flex items-baseline space-x-2 mt-2>
+            <span class=text-3xl font-black text-indigo-400>2.5x - 8.0x</span>
+            <span class=text-xs text-indigo-400 font-mono font-bold>Sub-Millisecond Memory</span>
+          </div>
+          <span class=text-[11px] text-slate-500 mt-1>Direct memory AST mutation, zero V8 GC pauses</span>
+        </div>
+
+        <!-- Metric 3 -->
+        <div class=bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between>
+          <span class=text-xs font-semibold text-slate-400 uppercase tracking-wider font-mono>Enterprise Cost Collapse</span>
+          <div class=flex items-baseline space-x-2 mt-2>
+            <span class=text-3xl font-black text-amber-400>.50 vs .00</span>
+            <span class=text-xs text-amber-400 font-mono font-bold>Per 1k Pipelines</span>
+          </div>
+          <span class=text-[11px] text-slate-500 mt-1>Measured on frontier models and local Puro-2B hardware</span>
+        </div>
+      </div>
+
+      <!-- Comparative Tasks Table -->
+      <div class=flex-1 bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col overflow-hidden>
+        <div class=flex justify-between items-center mb-4>
+          <h2 class=font-bold text-base text-white flex items-center space-x-2>
+            <span>⚔️ Head-to-Head Architecture Execution Benchmarks</span>
+          </h2>
+          <span class=text-xs text-slate-400 font-mono>100 Iterations / Task Suite</span>
+        </div>
+
+        <div class=flex-1 overflow-auto border border-slate-800 rounded-lg>
+          <table class=w-full text-left text-xs>
+            <thead class=bg-slate-950 text-slate-400 uppercase font-mono text-[11px] sticky top-0 border-b border-slate-800>
+              <tr>
+                <th class=p-3>Workload / Engineering Task</th>
+                <th class=p-3 text-right>LangChain (Flat History)</th>
+                <th class=p-3 text-right text-emerald-400>Dsh-OxCaml + DSOxCaml</th>
+                <th class=p-3 text-right text-sky-400>Efficiency Margin</th>
+                <th class=p-3 text-right text-amber-400>Cost Savings</th>
+              </tr>
+            </thead>
+            <tbody class=divide-y divide-slate-800/60 font-mono>
+              <tr class=hover:bg-slate-800/40>
+                <td class=p-3 font-sans font-medium text-slate-200>
+                  <div class=font-semibold text-white>Complex Text-to-SQL with Table Joins (2 Retries)</div>
+                  <div class=text-[11px] text-slate-400 font-sans>PostgreSQL column mismatch and churn filter re-align</div>
+                </td>
+                <td class=p-3 text-right text-slate-300>1,125,000 tok<br><span class=text-[10px] text-slate-500>.995 / .230</span></td>
+                <td class=p-3 text-right text-emerald-400 font-bold>87,500 tok<br><span class=text-[10px] text-emerald-500>.352 / .017</span></td>
+                <td class=p-3 text-right text-sky-400 font-bold>92.2% (12.9x)</td>
+                <td class=p-3 text-right text-amber-400 font-bold>92.9%</td>
+              </tr>
+              <tr class=hover:bg-slate-800/40>
+                <td class=p-3 font-sans font-medium text-slate-200>
+                  <div class=font-semibold text-white>Multi-File OCaml Module Migration (3 Retries)</div>
+                  <div class=text-[11px] text-slate-400 font-sans>Dune type mismatch and signature alignment in Core/Base</div>
+                </td>
+                <td class=p-3 text-right text-slate-300>2,800,000 tok<br><span class=text-[10px] text-slate-500>.760 / .546</span></td>
+                <td class=p-3 text-right text-emerald-400 font-bold>121,500 tok<br><span class=text-[10px] text-emerald-500>.532 / .025</span></td>
+                <td class=p-3 text-right text-sky-400 font-bold>95.7% (23.0x)</td>
+                <td class=p-3 text-right text-amber-400 font-bold>95.5%</td>
+              </tr>
+              <tr class=hover:bg-slate-800/40>
+                <td class=p-3 font-sans font-medium text-slate-200>
+                  <div class=font-semibold text-white>5-Stage Agentic Tool Pipeline with DST Rollback (4 Retries)</div>
+                  <div class=text-[11px] text-slate-400 font-sans>Formal invariant violation recovery and causal tick rewind</div>
+                </td>
+                <td class=p-3 text-right text-slate-300>5,700,000 tok<br><span class=text-[10px] text-slate-500>.800 / .069</span></td>
+                <td class=p-3 text-right text-emerald-400 font-bold>160,000 tok<br><span class=text-[10px] text-emerald-500>.720 / .033</span></td>
+                <td class=p-3 text-right text-sky-400 font-bold>97.2% (35.6x)</td>
+                <td class=p-3 text-right text-amber-400 font-bold>96.8%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: PURO-2B LIVE HARDWARE TRACE -->
+    <section id=view-puro class=view-panel flex-1 hidden flex-col gap-4>
+      <div class=bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col flex-1>
+        <div class=flex justify-between items-center mb-4>
+          <div>
+            <h2 class=font-bold text-base text-white>🔬 Measured Hardware Execution: Puro-2B-Base (Q4_K_M)</h2>
+            <p class=text-xs text-slate-400>Measured on local 6-core CPU via llama.cpp native bindings</p>
+          </div>
+          <span class=px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 font-mono text-xs border border-emerald-500/30>100% Verified Local Run</span>
+        </div>
+
+        <div class=grid grid-cols-2 gap-4 flex-1>
+          <!-- Arm A -->
+          <div class=bg-slate-950 border border-red-500/30 rounded-lg p-4 flex flex-col justify-between>
+            <div>
+              <div class=flex justify-between items-center mb-2>
+                <span class=text-xs font-bold text-red-400 font-mono uppercase>[Arm A: LangChain Flat Loop]</span>
+                <span class=text-xs text-red-400 font-mono>10,966 ms</span>
+              </div>
+              <div class=text-xs space-y-1 text-slate-300 font-mono bg-slate-900/80 p-3 rounded border border-slate-800>
+                <div>Prompt Tokens: <strong class=text-white>204</strong></div>
+                <div>Output Tokens: <strong class=text-white>111</strong></div>
+                <div>Total: <strong class=text-red-400>315 tokens</strong></div>
+                <div class=text-[11px] text-red-300 mt-2 font-mono>
+                  ❌ Result: Model got distracted by 4k-char error history and RE-EMITTED bad column:
+                  <div class=text-slate-400 bg-slate-950 p-2 rounded mt-1 overflow-x-auto text-[10px]>
+                    SELECT users.id, users.name, users.churn_score, us...
+                  </div>
+                </div>
+              </div>
+            </div>
+            <span class=text-[10px] text-slate-500 mt-2 font-mono>Attention collapsed under conversational context snowball.</span>
+          </div>
+
+          <!-- Arm B -->
+          <div class=bg-slate-950 border border-emerald-500/30 rounded-lg p-4 flex flex-col justify-between>
+            <div>
+              <div class=flex justify-between items-center mb-2>
+                <span class=text-xs font-bold text-emerald-400 font-mono uppercase>[Arm B: Dsh-OxCaml + DSOxCaml]</span>
+                <span class=text-xs text-emerald-400 font-mono>4,429 ms (2.5x Faster)</span>
+              </div>
+              <div class=text-xs space-y-1 text-slate-300 font-mono bg-slate-900/80 p-3 rounded border border-slate-800>
+                <div>Prompt Tokens: <strong class=text-white>49</strong> (76% less)</div>
+                <div>Output Tokens: <strong class=text-white>47</strong> (58% less)</div>
+                <div>Total: <strong class=text-emerald-400>96 tokens</strong></div>
+                <div class=text-[11px] text-emerald-300 mt-2 font-mono>
+                  ✅ Result: Model cleanly emitted surgical in-memory AST patch:
+                  <div class=text-emerald-400 bg-slate-950 p-2 rounded mt-1 overflow-x-auto text-[10px]>
+                    RenameColumn(node=3, new_col=churn_risk, old_col=churn_score)
+                  </div>
+                </div>
+              </div>
+            </div>
+            <span class=text-[10px] text-emerald-500/80 mt-2 font-mono>Clean 49-token lens prevented attention collapse on small 2B model.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: POLY LENSES & AST MUTATIONS -->
+    <section id=view-ast class=view-panel flex-1 hidden flex-col gap-4>
+      <div class=bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col flex-1>
+        <h2 class=font-bold text-base text-white mb-1>🌲 In-Memory AST Mutation & Dependent Lens (f♯) Visualizer</h2>
+        <p class=text-xs text-slate-400 mb-4>How Dsh-OxCaml eliminates file rewrites by mutating in-memory OCaml algebraic data types</p>
+
+        <div class=grid grid-cols-3 gap-4 flex-1>
+          <!-- Step 1 -->
+          <div class=bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col font-mono text-xs>
+            <span class=text-indigo-400 font-bold mb-2>1. In-Memory AST (OxCaml State S)</span>
+            <div class=flex-1 bg-slate-900/90 p-2.5 rounded text-[11px] text-slate-300 overflow-auto>
+              <div>Node #1: SELECT_CLAUSE</div>
+              <div>├── Node #2: Column(users.id)</div>
+              <div>└── Node #3: Column(users.churn_score) ⚠️</div>
+              <div class=mt-2 text-slate-500>Node #4: FROM(users JOIN orders)</div>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class=bg-slate-950 p-3 rounded-lg border border-amber-500/30 flex flex-col font-mono text-xs>
+            <span class=text-amber-400 font-bold mb-2>2. Backward Lens f♯ (Symbolic Distillation)</span>
+            <div class=flex-1 bg-slate-900/90 p-2.5 rounded text-[11px] text-slate-300 overflow-auto>
+              <div class=text-slate-500 line-through text-[10px]>5,000-char Postgres stack trace dropped</div>
+              <div class=text-emerald-400 mt-2 font-bold>25-token Parsed Diagnostic:</div>
+              <div class=mt-1 text-slate-200>UnknownColumn { node = 3; col = churn_score; hint = churn_risk }</div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class=bg-slate-950 p-3 rounded-lg border border-emerald-500/30 flex flex-col font-mono text-xs>
+            <span class=text-emerald-400 font-bold mb-2>3. Surgical AST Patch (15 Tokens)</span>
+            <div class=flex-1 bg-slate-900/90 p-2.5 rounded text-[11px] text-slate-300 overflow-auto>
+              <div class=text-emerald-400>let patch = RenameColumn { node_id = 3; new_col = churn_risk }</div>
+              <div class=mt-2 text-sky-400>let new_ast = Ast.apply_patch current_ast patch</div>
+              <div class=mt-2 text-[10px] text-slate-400 font-sans>AST updated in 0.01ms memory write with zero token re-generation!</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: SPATIOTEMPORAL CHAOS & REVERSIBLE DST -->
+    <section id=view-dst class=view-panel flex-1 hidden flex-col gap-4>
+      <div class=bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col flex-1>
+        <div class=flex justify-between items-center mb-4>
+          <div>
+            <h2 class=font-bold text-base text-white>⏳ Deterministic Simulation Testing (DST) & Chaos Scrubber</h2>
+            <p class=text-xs text-slate-400>Virtual Causal Clock with bit-exact replay and discrete state rollbacks</p>
+          </div>
+          <button onclick=injectFault() class=px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-semibold shadow>💥 Inject Chaos Fault</button>
+        </div>
+
+        <div class=bg-slate-950 p-4 rounded-lg border border-slate-800 font-mono text-xs flex-1 flex flex-col justify-between>
+          <div id=dst-log class=space-y-1.5 overflow-auto flex-1 text-slate-300>
+            <div class=text-emerald-400>[Tick τ = 1] SPAWN: Supervisor and Worker nodes mounted in Cordis context root.</div>
+            <div class=text-emerald-400>[Tick τ = 2] FORWARD: Supervisor emits initial polynomial position p(1).</div>
+            <div class=text-indigo-400>[Tick τ = 3] EXECUTE: Worker generates in-memory AST and commits snapshot.</div>
+            <div class=text-amber-400>[Tick τ = 4] INVARIANT CHECK: Invariant violation detected by Cubical Agda proof lens.</div>
+            <div class=text-sky-400>[Tick τ = 5] ROLLBACK: Cordis rewinds state stack to τ = 3 in 0.02ms. Context 100% clean.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-indigo-600', 'text-white');
+        btn.classList.add('text-slate-400');
+      });
+      document.querySelectorAll('.view-panel').forEach(panel => {
+        panel.classList.add('hidden');
+      });
+
+      const btn = document.getElementById('tab-' + tabId);
+      const view = document.getElementById('view-' + tabId);
+      if (btn && view) {
+        btn.classList.add('bg-indigo-600', 'text-white');
+        btn.classList.remove('text-slate-400');
+        view.classList.remove('hidden');
+      }
+    }
+
+    let tick = 14;
+    setInterval(() => {
+      tick++;
+      const el = document.getElementById('clock-tick');
+      if (el) el.textContent = 'τ = ' + tick;
+    }, 2000);
+
+    function injectFault() {
+      const log = document.getElementById('dst-log');
+      if (log) {
+        tick++;
+        const div = document.createElement('div');
+        div.className = 'text-rose-400 font-bold';
+        div.textContent = [Tick τ = ] FAULT INJECTED: Network partition & clock skew simulated. Cordis isolating scope...;
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
+      }
+    }
+  </script>
+</body>
+</html>

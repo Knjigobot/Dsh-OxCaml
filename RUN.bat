@@ -1,13 +1,4 @@
-@echo off
-title Dsh-OxCaml CLI
+﻿@echo off
 cd /d "%~dp0"
-echo ========================================================================
-echo   DSH-OXCAML: DeepSeek Agent Harness in OxCaml on Cordis
-echo ========================================================================
-where dune >nul 2>nul
-if %ERRORLEVEL% EQU 0 (
-    dune exec bin/main.exe -- %*
-) else (
-    echo [ERROR] Dune not found in PATH.
-    pause
-)
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process powershell -ArgumentList '-NoProfile -ExecutionPolicy Bypass -Command `$host.UI.RawUI.WindowTitle = ''CordisHttpDaemon''; & ''%~dp0server.ps1''' -WindowStyle Hidden"
+start "" "http://localhost:8088"

@@ -404,13 +404,28 @@
       }
     }
 
-    // Zero-F5 Live HMR Sync via SSE stream
+    // ⚡ DUAL-CHANNEL ZERO-F5 LIVE HMR AUTO-SYNC
+    let initialFileTicks = null;
+    let isReloading = false;
+
+    function triggerAutoReload() {
+      if (isReloading) return;
+      isReloading = true;
+      console.log('[Cordis-HMR] File change detected on disk! Hot-reloading DOM...');
+      location.reload();
+    }
+
+    // Channel A: Persistent SSE Live Stream
     try {
       const sse = new EventSource('/events');
       sse.onmessage = function(event) {
         try {
           const data = JSON.parse(event.data);
-          if (data.type === 'tick' && data.tick) {
+          if (data.type === 'connected' && data.fileTicks) {
+            initialFileTicks = data.fileTicks;
+          } else if (data.type === 'reload') {
+            triggerAutoReload();
+          } else if (data.type === 'tick' && data.tick) {
             currentTick = data.tick;
             const el = document.getElementById('clock-tick');
             if (el) el.textContent = 'τ = ' + currentTick;
@@ -418,6 +433,21 @@
         } catch(e) {}
       };
     } catch(err) {}
+
+    // Channel B: Fast Polling Micro-Heartbeat (Guaranteed 400ms Fallback)
+    setInterval(async () => {
+      try {
+        const res = await fetch('/_cordis_version?t=' + Date.now(), { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (initialFileTicks === null) {
+            initialFileTicks = data.fileTicks;
+          } else if (data.fileTicks && data.fileTicks !== initialFileTicks) {
+            triggerAutoReload();
+          }
+        }
+      } catch(e) {}
+    }, 400);
   </script>
 </body>
 </html>
